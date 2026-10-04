@@ -22,3 +22,17 @@ export async function getFeaturedWebsites(): Promise<Website[]> {
 
   return response.json();
 }
+
+export async function getSearchResults(
+  query: string,
+): Promise<Website[]> {
+  const response = await fetch(
+    `${API_URL}/websites/?search=${encodeURIComponent(query)}`,
+  );
+
+  if (!response.ok) {
+    throw new Error("Failed to search websites");
+  }
+
+  return response.json();
+}
