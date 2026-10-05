@@ -36,3 +36,17 @@ export async function getSearchResults(
 
   return response.json();
 }
+
+export async function getCategoryWebsites(
+  category: string,
+): Promise<Website[]> {
+  const response = await fetch(
+    `${API_URL}/websites/?category=${encodeURIComponent(category)}`,
+  );
+
+  if (!response.ok) {
+    throw new Error("Failed to fetch category websites");
+  }
+
+  return response.json();
+}
