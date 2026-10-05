@@ -1,3 +1,4 @@
+import { getWebsiteRedirectUrl } from "@/lib/api";
 import type { Website } from "@/lib/types";
 
 type FeaturedWebsitesProps = {
@@ -51,7 +52,7 @@ export default function FeaturedWebsites({
             </p>
 
             <a
-              href={website.url}
+              href={getWebsiteRedirectUrl(website.slug)}
               target="_blank"
               rel="noopener noreferrer"
               className="mt-6 inline-flex items-center font-semibold text-[var(--primary)] transition hover:text-[var(--primary-dark)]"
