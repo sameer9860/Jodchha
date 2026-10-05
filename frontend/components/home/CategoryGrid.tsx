@@ -30,7 +30,8 @@ export default function CategoryGrid({
           <Link
             key={category.id}
             href={`/categories/${category.slug}`}
-            className="group rounded-xl border border-[var(--border)] bg-[var(--white)] p-5 text-left transition hover:-translate-y-1 hover:border-blue-200 hover:shadow-md"
+            aria-label={`Open ${category.name} category`}
+            className="group block rounded-xl border border-[var(--border)] bg-[var(--white)] p-5 text-left transition hover:-translate-y-1 hover:border-blue-200 hover:shadow-md"
           >
             <span className="text-2xl" aria-hidden="true">
               {category.icon || "🔗"}
