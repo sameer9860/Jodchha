@@ -1,6 +1,6 @@
 import Link from "next/link";
 
-import { getSearchResults } from "@/lib/api";
+import { getSearchResults, getWebsiteRedirectUrl } from "@/lib/api";
 import type { Website } from "@/lib/types";
 
 type SearchPageProps = {
@@ -91,7 +91,7 @@ export default async function SearchPage({
                 </p>
 
                 <a
-                  href={website.url}
+                  href={getWebsiteRedirectUrl(website.slug)}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="mt-6 inline-flex items-center font-semibold text-[var(--primary)] hover:text-[var(--primary-dark)]"
