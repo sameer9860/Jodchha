@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 import type { Category } from "@/lib/types";
 
 type CategoryGridProps = {
@@ -25,9 +27,9 @@ export default function CategoryGrid({
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {categories.map((category) => (
-          <button
+          <Link
             key={category.id}
-            type="button"
+            href={`/categories/${category.slug}`}
             className="group rounded-xl border border-[var(--border)] bg-[var(--white)] p-5 text-left transition hover:-translate-y-1 hover:border-blue-200 hover:shadow-md"
           >
             <span className="text-2xl" aria-hidden="true">
@@ -41,7 +43,7 @@ export default function CategoryGrid({
             <p className="mt-1 text-sm leading-6 text-[var(--muted)]">
               {category.description}
             </p>
-          </button>
+          </Link>
         ))}
       </div>
     </section>
