@@ -3,6 +3,10 @@ import type { Category, Website } from "./types";
 const API_URL =
   process.env.NEXT_PUBLIC_API_URL ?? "http://127.0.0.1:8000/api";
 
+  export function getWebsiteRedirectUrl(slug: string): string {
+  return `${API_URL}/go/${encodeURIComponent(slug)}/`;
+}
+
 export async function getCategories(): Promise<Category[]> {
   const response = await fetch(`${API_URL}/categories/`);
 
