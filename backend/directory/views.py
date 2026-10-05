@@ -1,7 +1,8 @@
-from django.db.models import Q
+from django.db.models import F, Q
+from django.shortcuts import get_object_or_404, redirect
 from rest_framework import generics
 
-from .models import Category, Website
+from .models import Category, Click, Website
 from .serializers import CategorySerializer, WebsiteSerializer
 
 
@@ -36,3 +37,23 @@ class WebsiteListView(generics.ListAPIView):
             )
 
         return queryset
+
+
+def website_redirect(request, slug):
+    website = get_object_or_404(
+        Website,
+        slug=slug,
+        is_active=True,
+    )
+
+    Website.objects.filter(pk=website.pk).update(
+        click_count=F("click_count") + 1
+    )
+
+    Click.objects.create(
+        website=website,
+        referrer=request.headers.get("Referer", ""),
+        user_agent=request.headers.get("User-Agent", ""),
+    )
+
+    return redirect(website.url)
