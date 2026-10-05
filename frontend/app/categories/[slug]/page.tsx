@@ -1,7 +1,11 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
-import { getCategories, getCategoryWebsites } from "@/lib/api";
+import {
+  getCategories,
+  getCategoryWebsites,
+  getWebsiteRedirectUrl,
+} from "@/lib/api";
 
 type CategoryPageProps = {
   params: Promise<{
@@ -99,7 +103,7 @@ export default async function CategoryPage({
                 </p>
 
                 <a
-                  href={website.url}
+                  href={getWebsiteRedirectUrl(website.slug)}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="mt-6 inline-flex items-center font-semibold text-[var(--primary)] hover:text-[var(--primary-dark)]"
