@@ -75,8 +75,11 @@ export default async function CategoryPage({
         ) : (
           <div className="mt-10 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
             {websites.map((website) => (
-              <article
+              <a
                 key={website.id}
+                href={getWebsiteRedirectUrl(website.slug)}
+                target="_blank"
+                rel="noopener noreferrer"
                 className="group flex flex-col rounded-xl border border-[var(--border)] bg-[var(--white)] p-6 transition hover:-translate-y-1 hover:border-blue-200 hover:shadow-md"
               >
                 <div className="flex items-start justify-between">
@@ -102,18 +105,13 @@ export default async function CategoryPage({
                   {website.description}
                 </p>
 
-                <a
-                  href={getWebsiteRedirectUrl(website.slug)}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="mt-6 inline-flex items-center font-semibold text-[var(--primary)] hover:text-[var(--primary-dark)]"
-                >
+                <span className="mt-6 inline-flex items-center font-semibold text-[var(--primary)] hover:text-[var(--primary-dark)]">
                   Visit Website
                   <span className="ml-2 transition group-hover:translate-x-1">
                     →
                   </span>
-                </a>
-              </article>
+                </span>
+              </a>
             ))}
           </div>
         )}
