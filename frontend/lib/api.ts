@@ -54,3 +54,37 @@ export async function getCategoryWebsites(
 
   return response.json();
 }
+
+export type ShortLink = {
+  id: number;
+  code: string;
+  destination_url: string;
+  click_count: number;
+  is_active: boolean;
+  created_at: string;
+  expires_at: string | null;
+};
+
+export async function createShortLink(
+  destinationUrl: string,
+): Promise<ShortLink> {
+  const response = await fetch(`${API_URL}/shortlinks/`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      destination_url: destinationUrl,
+    }),
+  });
+
+  if (!response.ok) {
+    throw new Error("Failed to create short link");
+  }
+
+  return response.json();
+}
+
+export function getShortLinkUrl(code: string): string {
+  return `${API_URL}/s/${encodeURIComponent(code)}/`;
+}
