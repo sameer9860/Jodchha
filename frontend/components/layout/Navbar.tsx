@@ -2,7 +2,7 @@ import Link from "next/dist/client/link";
 
 export default function Navbar() {
   return (
-    <header className="border-b border-[var(--border)] bg-[var(--white)]">
+    <header className="sticky top-0 z-50 border-b border-[var(--border)] bg-[var(--white)]/90 backdrop-blur-sm shadow-sm">
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-6">
         <Link
           href="/"
@@ -27,7 +27,7 @@ export default function Navbar() {
           </Link>
 
           <Link
-            href="#tools"
+            href="/tools"
             className="text-sm font-medium text-[var(--muted)] transition hover:text-[var(--primary)]"
           >
             Tools
