@@ -12,6 +12,7 @@ export default function CategoryGrid({
   return (
     <section id="categories" className="mx-auto max-w-6xl px-6 py-16">
       <div className="mb-8">
+
         <p className="text-sm font-semibold uppercase tracking-wider text-[var(--primary)]">
           Explore
         </p>
