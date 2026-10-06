@@ -5,8 +5,8 @@ const tools = [
     name: "QR Code Generator",
     description: "Create a QR code from a website URL or text.",
     icon: "▦",
-    status: "Coming Soon",
-    href: null,
+    status: "Available",
+    href: "/tools/qr-code",
   },
   {
     name: "URL Shortener",
@@ -58,11 +58,10 @@ export default function ToolGrid() {
                   </span>
 
                   <span
-                    className={`rounded-full px-3 py-1 text-xs font-semibold ${
-                      tool.href
+                    className={`rounded-full px-3 py-1 text-xs font-semibold ${tool.href
                         ? "bg-green-50 text-green-700"
                         : "bg-slate-100 text-[var(--muted)]"
-                    }`}
+                      }`}
                   >
                     {tool.status}
                   </span>
