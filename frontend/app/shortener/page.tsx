@@ -1,10 +1,19 @@
+import Link from "next/link";
+
 import ShortenerForm from "@/components/tools/ShortenerForm";
 
 export default function ShortenerPage() {
   return (
     <main className="min-h-screen bg-[var(--background)]">
       <div className="mx-auto max-w-3xl px-6 py-16">
-        <p className="text-sm font-semibold uppercase tracking-wider text-[var(--accent)]">
+        <Link
+          href="/"
+          className="text-sm font-semibold text-[var(--primary)] hover:text-[var(--primary-dark)]"
+        >
+          ← Back to Jodchha
+        </Link>
+
+        <p className="mt-6 text-sm font-semibold uppercase tracking-wider text-[var(--accent)]">
           Jodchha Tool
         </p>
 
