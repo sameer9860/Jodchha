@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
@@ -12,6 +13,38 @@ type CategoryPageProps = {
     slug: string;
   }>;
 };
+
+export async function generateMetadata({
+  params,
+}: CategoryPageProps): Promise<Metadata> {
+  const { slug } = await params;
+  const categories = await getCategories();
+  const category = categories.find((item) => item.slug === slug);
+
+  if (!category) {
+    return {
+      title: "Category Not Found | Jodchha",
+      description: "The requested category could not be found.",
+    };
+  }
+
+  return {
+    title: `${category.name} | Jodchha`,
+    description:
+      category.description ||
+      `Explore ${category.name} websites and useful services on Jodchha.`,
+    alternates: {
+      canonical: `/categories/${category.slug}`,
+    },
+    openGraph: {
+      title: `${category.name} | Jodchha`,
+      description:
+        category.description ||
+        `Browse ${category.name} websites and resources on Jodchha.`,
+      url: `/categories/${category.slug}`,
+    },
+  };
+}
 
 export default async function CategoryPage({
   params,
@@ -29,8 +62,34 @@ export default async function CategoryPage({
     notFound();
   }
 
+  const breadcrumbData = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      {
+        "@type": "ListItem",
+        position: 1,
+        name: "Jodchha",
+        item: "https://jodchha.com.np",
+      },
+      {
+        "@type": "ListItem",
+        position: 2,
+        name: category.name,
+        item: `https://jodchha.com.np/categories/${category.slug}`,
+      },
+    ],
+  };
+
   return (
     <main className="min-h-screen bg-[var(--background)]">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(breadcrumbData),
+        }}
+      />
+
       <div className="mx-auto max-w-6xl px-6 py-16">
         <Link
           href="/"
