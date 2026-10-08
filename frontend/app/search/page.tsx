@@ -1,6 +1,10 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 
-import { getSearchResults, getWebsiteRedirectUrl } from "@/lib/api";
+import {
+  getSearchResults,
+  getWebsiteRedirectUrl,
+} from "@/lib/api";
 import type { Website } from "@/lib/types";
 
 type SearchPageProps = {
@@ -9,6 +13,23 @@ type SearchPageProps = {
   }>;
 };
 
+export async function generateMetadata({
+  searchParams,
+}: SearchPageProps): Promise<Metadata> {
+  const params = await searchParams;
+  const query = params.q?.trim() ?? "";
+
+  return {
+    title: query ? `Search results for "${query}"` : "Search",
+    description: query
+      ? `Search results for "${query}" on Jodchha.`
+      : "Search useful websites, online services, and tools on Jodchha.",
+    robots: {
+      index: false,
+      follow: true,
+    },
+  };
+}
 export default async function SearchPage({
   searchParams,
 }: SearchPageProps) {
