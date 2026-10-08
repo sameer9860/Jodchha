@@ -1,4 +1,9 @@
-import type { Category, Website } from "./types";
+import type {
+  AnalyticsDashboard,
+  AuthTokens,
+  Category,
+  Website,
+} from "./types";
 
 const API_URL =
   process.env.NEXT_PUBLIC_API_URL ?? "http://127.0.0.1:8000/api";
@@ -87,4 +92,63 @@ export async function createShortLink(
 
 export function getShortLinkUrl(code: string): string {
   return `${API_URL}/s/${encodeURIComponent(code)}/`;
+}
+
+export async function loginAdmin(
+  username: string,
+  password: string,
+): Promise<AuthTokens> {
+  const response = await fetch(`${API_URL}/auth/token/`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      username,
+      password,
+    }),
+  });
+
+  if (!response.ok) {
+    throw new Error("Invalid username or password");
+  }
+
+  return response.json();
+}
+
+export async function refreshAccessToken(
+  refresh: string,
+): Promise<AuthTokens> {
+  const response = await fetch(`${API_URL}/auth/token/refresh/`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      refresh,
+    }),
+  });
+
+  if (!response.ok) {
+    throw new Error("Unable to refresh access token");
+  }
+
+  return response.json();
+}
+
+export async function getAnalyticsDashboard(
+  accessToken: string,
+): Promise<AnalyticsDashboard> {
+  const response = await fetch(`${API_URL}/analytics/`, {
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
+    cache: "no-store",
+  });
+
+  if (!response.ok) {
+    throw new Error("Failed to fetch analytics");
+  }
+
+  return response.json();
 }
