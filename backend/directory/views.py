@@ -1,10 +1,8 @@
-from django.db.models import F, Q
+from datetime import datetime, timedelta
+
+from django.db.models import Count, F, Q
 from django.shortcuts import get_object_or_404, redirect
-from rest_framework import generics
-
-from .models import Category, Click, Website
-from .serializers import CategorySerializer, WebsiteSerializer
-
+from django.utils import timezone
 from rest_framework import generics, status
 from rest_framework.response import Response
 
@@ -16,9 +14,7 @@ from .serializers import (
 )
 from .utils import generate_short_code
 
-from django.utils import timezone
-from django.shortcuts import get_object_or_404, redirect
-from django.db.models import F
+from rest_framework.permissions import IsAdminUser
 
 class CategoryListView(generics.ListAPIView):
     queryset = Category.objects.filter(is_active=True)
@@ -29,9 +25,7 @@ class WebsiteListView(generics.ListAPIView):
     serializer_class = WebsiteSerializer
 
     def get_queryset(self):
-        queryset = Website.objects.filter(
-            is_active=True
-        ).select_related("category")
+        queryset = Website.objects.filter(is_active=True).select_related("category")
 
         category = self.request.query_params.get("category")
         featured = self.request.query_params.get("featured")
@@ -60,9 +54,7 @@ def website_redirect(request, slug):
         is_active=True,
     )
 
-    Website.objects.filter(pk=website.pk).update(
-        click_count=F("click_count") + 1
-    )
+    Website.objects.filter(pk=website.pk).update(click_count=F("click_count") + 1)
 
     Click.objects.create(
         website=website,
@@ -92,7 +84,8 @@ class ShortLinkCreateView(generics.CreateAPIView):
             output_serializer.data,
             status=status.HTTP_201_CREATED,
         )
-        
+
+
 def short_link_redirect(request, code):
     short_link = get_object_or_404(
         ShortLink,
@@ -103,9 +96,7 @@ def short_link_redirect(request, code):
     if short_link.expires_at and short_link.expires_at <= timezone.now():
         return redirect("/")
 
-    ShortLink.objects.filter(pk=short_link.pk).update(
-        click_count=F("click_count") + 1
-    )
+    ShortLink.objects.filter(pk=short_link.pk).update(click_count=F("click_count") + 1)
 
     Click.objects.create(
         short_link=short_link,
@@ -114,3 +105,86 @@ def short_link_redirect(request, code):
     )
 
     return redirect(short_link.destination_url)
+
+
+class AnalyticsDashboardView(generics.GenericAPIView):
+    permission_classes = (IsAdminUser,)
+
+    def get(self, request, *args, **kwargs):
+        now = timezone.now()
+        today = now.date()
+
+        today_start = timezone.make_aware(
+            datetime.combine(
+                today,
+                datetime.min.time(),
+            )
+        )
+
+        week_start = now - timedelta(days=7)
+        month_start = now - timedelta(days=30)
+
+        total_clicks = Click.objects.count()
+
+        clicks_today = Click.objects.filter(
+            created_at__gte=today_start,
+        ).count()
+
+        clicks_week = Click.objects.filter(
+            created_at__gte=week_start,
+        ).count()
+
+        clicks_month = Click.objects.filter(
+            created_at__gte=month_start,
+        ).count()
+
+        top_websites = (
+            Website.objects.filter(is_active=True)
+            .order_by("-click_count", "name")[:10]
+            .values(
+                "id",
+                "name",
+                "slug",
+                "click_count",
+            )
+        )
+
+        top_categories = (
+            Click.objects.filter(website__isnull=False)
+            .values(
+                "website__category__name",
+            )
+            .annotate(
+                clicks=Count("id"),
+            )
+            .order_by("-clicks")[:10]
+        )
+
+        recent_clicks = Click.objects.select_related(
+            "website",
+            "short_link",
+        ).order_by("-created_at")[:20]
+
+        recent_data = [
+            {
+                "id": click.id,
+                "website": click.website.name if click.website else None,
+                "short_link": click.short_link.code if click.short_link else None,
+                "created_at": click.created_at,
+            }
+            for click in recent_clicks
+        ]
+
+        return Response(
+            {
+                "summary": {
+                    "total_clicks": total_clicks,
+                    "clicks_today": clicks_today,
+                    "clicks_week": clicks_week,
+                    "clicks_month": clicks_month,
+                },
+                "top_websites": list(top_websites),
+                "top_categories": list(top_categories),
+                "recent_clicks": recent_data,
+            }
+        )
