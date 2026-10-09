@@ -136,15 +136,67 @@ export async function refreshAccessToken(
   return response.json();
 }
 
+async function authenticatedFetch(endpoint: string): Promise<Response> {
+  const accessToken = sessionStorage.getItem("jodchha_access_token");
+  const refreshToken = sessionStorage.getItem("jodchha_refresh_token");
+
+  if (!accessToken) {
+    throw new Error("Authentication required");
+  }
+
+  const request = (token: string) =>
+    fetch(`${API_URL}${endpoint}`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      cache: "no-store",
+    });
+
+  let response = await request(accessToken);
+
+  if (response.status !== 401 || !refreshToken) {
+    return response;
+  }
+
+  try {
+    const tokens = await refreshAccessToken(refreshToken);
+
+    sessionStorage.setItem("jodchha_access_token", tokens.access);
+
+    if (tokens.refresh) {
+      sessionStorage.setItem("jodchha_refresh_token", tokens.refresh);
+    }
+
+    response = await request(tokens.access);
+    return response;
+  } catch {
+    sessionStorage.removeItem("jodchha_access_token");
+    sessionStorage.removeItem("jodchha_refresh_token");
+    throw new Error("Session expired. Please sign in again.");
+  }
+}
+
+
 export async function getAnalyticsDashboard(
-  accessToken: string,
+  startDate?: string,
+  endDate?: string,
 ): Promise<AnalyticsDashboard> {
-  const response = await fetch(`${API_URL}/analytics/`, {
-    headers: {
-      Authorization: `Bearer ${accessToken}`,
-    },
-    cache: "no-store",
-  });
+  const params = new URLSearchParams();
+
+  if (startDate) {
+    params.set("start_date", startDate);
+  }
+
+  if (endDate) {
+    params.set("end_date", endDate);
+  }
+
+  const queryString = params.toString();
+  const endpoint = queryString
+    ? `/analytics/?${queryString}`
+    : "/analytics/";
+
+  const response = await authenticatedFetch(endpoint);
 
   if (!response.ok) {
     throw new Error("Failed to fetch analytics");
