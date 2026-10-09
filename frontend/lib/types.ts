@@ -6,6 +6,10 @@ export type Category = {
   icon: string;
 };
 
+export type DailyClick = {
+  date: string;
+  clicks: number;
+};
 export type Website = {
   id: number;
   name: string;
@@ -45,6 +49,7 @@ export type RecentClick = {
 
 export type AnalyticsDashboard = {
   summary: AnalyticsSummary;
+  daily_clicks: DailyClick[];
   top_websites: TopWebsite[];
   top_categories: TopCategory[];
   recent_clicks: RecentClick[];
@@ -54,3 +59,4 @@ export type AuthTokens = {
   access: string;
   refresh: string;
 };
+
