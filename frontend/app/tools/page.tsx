@@ -19,10 +19,10 @@ const tools = [
   },
   {
     name: "File Converter",
-    description: "Convert common files between useful formats.",
+    description: "Convert PNG, JPEG, and WebP images directly in the browser.",
     icon: "⇄",
-    status: "Coming Soon",
-    href: null,
+    status: "Available",
+    href: "/tools/file-converter",
   },
 ];
 
