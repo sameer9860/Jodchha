@@ -12,11 +12,10 @@ import CategoryClicksChart from "@/components/admin/CategoryClicksChart";
 
 
 const summaryCards = [
-    { key: "total_clicks", label: "Total Clicks" },
+    { key: "total_clicks", label: "Clicks in Range" },
     { key: "clicks_today", label: "Today" },
     { key: "clicks_week", label: "Last 7 Days" },
     { key: "clicks_month", label: "Last 30 Days" },
-    
 ] as const;
 
 export default function AdminDashboardPage() {
@@ -129,6 +128,66 @@ export default function AdminDashboardPage() {
     }
   }
 
+  function exportAnalyticsCsv() {
+    if (!data) return;
+
+    const rows: string[][] = [
+      ["Jodchha Analytics Report"],
+      ["Exported At", new Date().toISOString()],
+      ["Start Date", startDate || "Default period"],
+      ["End Date", endDate || "Today"],
+      [],
+      ["Daily Clicks"],
+      ["Date", "Clicks"],
+      ...data.daily_clicks.map((item) => [String(item.date), String(item.clicks)]),
+      [],
+      ["Top Websites"],
+      ["Website", "Clicks"],
+      ...data.top_websites.map((item) => [item.name, String(item.click_count)]),
+      [],
+      ["Top Categories"],
+      ["Category", "Clicks"],
+      ...data.top_categories.map((item) => [
+        item.website__category__name,
+        String(item.clicks),
+      ]),
+      [],
+      ["Recent Clicks"],
+      ["Type", "Destination", "Referrer", "Time"],
+      ...data.recent_clicks.map((item) => [
+        item.type,
+        item.destination,
+        item.referrer,
+        item.created_at,
+      ]),
+    ];
+
+    const csv = rows
+      .map((row) =>
+        row
+          .map((value) => `"${value.replace(/"/g, '""')}"`)
+          .join(","),
+      )
+      .join("\r\n");
+
+    const blob = new Blob(["\uFEFF", csv], {
+      type: "text/csv;charset=utf-8;",
+    });
+
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+
+    link.href = url;
+    link.download = `jodchha-analytics-${new Date()
+      .toISOString()
+      .slice(0, 10)}.csv`;
+
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
+  }
+
     function handleLogout() {
         sessionStorage.removeItem("jodchha_access_token");
         sessionStorage.removeItem("jodchha_refresh_token");
@@ -163,6 +222,14 @@ export default function AdminDashboardPage() {
                 className="rounded-lg bg-[var(--primary)] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[var(--primary-dark)] disabled:cursor-not-allowed disabled:opacity-60"
             >
                 {refreshing ? "Refreshing..." : "Refresh"}
+            </button>
+            <button
+                type="button"
+                onClick={exportAnalyticsCsv}
+                disabled={!data || loading || refreshing}
+                className="rounded-lg border border-[var(--border)] px-4 py-2 text-sm font-semibold text-[var(--foreground)] transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+                Export CSV
             </button>
             <button
                 type="button"
@@ -342,12 +409,13 @@ export default function AdminDashboardPage() {
                     </p>
                 ) : (
                     <div className="mt-4 overflow-x-auto">
-                        <table className="w-full min-w-[560px] text-left text-sm">
+                        <table className="w-full min-w-[700px] text-left text-sm">
                             <thead>
                                 <tr className="border-b border-[var(--border)] text-[var(--muted)]">
-                                    <th className="px-3 py-3 font-medium">Destination</th>
                                     <th className="px-3 py-3 font-medium">Type</th>
-                                    <th className="px-3 py-3 font-medium">Date</th>
+                                    <th className="px-3 py-3 font-medium">Destination</th>
+                                    <th className="px-3 py-3 font-medium">Referrer</th>
+                                    <th className="px-3 py-3 font-medium">Time</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -356,11 +424,14 @@ export default function AdminDashboardPage() {
                                         key={click.id}
                                         className="border-b border-[var(--border)] last:border-0"
                                     >
+                                        <td className="px-3 py-4 text-[var(--muted)]">
+                                            {click.type === "website" ? "Website" : "Short Link"}
+                                        </td>
                                         <td className="px-3 py-4 font-medium text-[var(--foreground)]">
-                                            {click.website || click.short_link || "Unknown"}
+                                            {click.destination || "Unknown"}
                                         </td>
                                         <td className="px-3 py-4 text-[var(--muted)]">
-                                            {click.website ? "Website" : "Short Link"}
+                                            {click.referrer || "Direct"}
                                         </td>
                                         <td className="whitespace-nowrap px-3 py-4 text-[var(--muted)]">
                                             {new Date(click.created_at).toLocaleString()}
