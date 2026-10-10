@@ -19,8 +19,8 @@ const tools = [
     name: "File Converter",
     description: "Convert common files between useful formats.",
     icon: "⇄",
-    status: "Coming Soon",
-    href: null,
+    status: "Available",
+    href: "/tools/file-converter",
   },
 ];
 
