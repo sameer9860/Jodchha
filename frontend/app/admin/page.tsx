@@ -28,165 +28,165 @@ export default function AdminDashboardPage() {
     const [startDate, setStartDate] = useState("");
     const [endDate, setEndDate] = useState("");
 
-  async function loadDashboard(showLoading = true) {
-    const accessToken = sessionStorage.getItem("jodchha_access_token");
+    async function loadDashboard(showLoading = true) {
+        const accessToken = sessionStorage.getItem("jodchha_access_token");
 
-    if (!accessToken) {
-      router.replace("/admin/login");
-      return;
-    }
-
-    if (startDate && endDate && startDate > endDate) {
-      setError("Start date must be before or equal to the end date.");
-      return;
-    }
-
-    if (showLoading) {
-      setLoading(true);
-    } else {
-      setRefreshing(true);
-    }
-
-    setError("");
-
-    try {
-      const result = await getAnalyticsDashboard(
-        startDate || undefined,
-        endDate || undefined,
-      );
-      setData(result);
-    } catch {
-      setError("Unable to load analytics. Please try again or sign in again.");
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
-    }
-  }
-
-  useEffect(() => {
-    let active = true;
-
-    async function fetchDashboard() {
-      const accessToken = sessionStorage.getItem("jodchha_access_token");
-
-      if (!accessToken) {
-        router.replace("/admin/login");
-        return;
-      }
-
-      if (active) {
-        setLoading(true);
-      }
-
-      setError("");
-
-      try {
-        const result = await getAnalyticsDashboard(
-          startDate || undefined,
-          endDate || undefined,
-        );
-
-        if (active) {
-          setData(result);
+        if (!accessToken) {
+            router.replace("/admin/login");
+            return;
         }
-      } catch {
-        if (active) {
-          setError("Unable to load analytics. Please try again or sign in again.");
+
+        if (startDate && endDate && startDate > endDate) {
+            setError("Start date must be before or equal to the end date.");
+            return;
         }
-      } finally {
-        if (active) {
-          setLoading(false);
+
+        if (showLoading) {
+            setLoading(true);
+        } else {
+            setRefreshing(true);
         }
-      }
+
+        setError("");
+
+        try {
+            const result = await getAnalyticsDashboard(
+                startDate || undefined,
+                endDate || undefined,
+            );
+            setData(result);
+        } catch {
+            setError("Unable to load analytics. Please try again or sign in again.");
+        } finally {
+            setLoading(false);
+            setRefreshing(false);
+        }
     }
 
-    void fetchDashboard();
+    useEffect(() => {
+        let active = true;
 
-    return () => {
-      active = false;
-    };
-  }, [router, startDate, endDate]);
+        async function fetchDashboard() {
+            const accessToken = sessionStorage.getItem("jodchha_access_token");
 
-  async function loadDashboardWithDefaultDates() {
-    const accessToken = sessionStorage.getItem("jodchha_access_token");
+            if (!accessToken) {
+                router.replace("/admin/login");
+                return;
+            }
 
-    if (!accessToken) {
-      router.replace("/admin/login");
-      return;
+            if (active) {
+                setLoading(true);
+            }
+
+            setError("");
+
+            try {
+                const result = await getAnalyticsDashboard(
+                    startDate || undefined,
+                    endDate || undefined,
+                );
+
+                if (active) {
+                    setData(result);
+                }
+            } catch {
+                if (active) {
+                    setError("Unable to load analytics. Please try again or sign in again.");
+                }
+            } finally {
+                if (active) {
+                    setLoading(false);
+                }
+            }
+        }
+
+        void fetchDashboard();
+
+        return () => {
+            active = false;
+        };
+    }, [router, startDate, endDate]);
+
+    async function loadDashboardWithDefaultDates() {
+        const accessToken = sessionStorage.getItem("jodchha_access_token");
+
+        if (!accessToken) {
+            router.replace("/admin/login");
+            return;
+        }
+
+        setRefreshing(true);
+        setError("");
+
+        try {
+            const result = await getAnalyticsDashboard();
+            setData(result);
+        } catch {
+            setError("Unable to load analytics. Please try again or sign in again.");
+        } finally {
+            setRefreshing(false);
+        }
     }
 
-    setRefreshing(true);
-    setError("");
+    function exportAnalyticsCsv() {
+        if (!data) return;
 
-    try {
-      const result = await getAnalyticsDashboard();
-      setData(result);
-    } catch {
-      setError("Unable to load analytics. Please try again or sign in again.");
-    } finally {
-      setRefreshing(false);
+        const rows: string[][] = [
+            ["Jodchha Analytics Report"],
+            ["Exported At", new Date().toISOString()],
+            ["Start Date", startDate || "Default period"],
+            ["End Date", endDate || "Today"],
+            [],
+            ["Daily Clicks"],
+            ["Date", "Clicks"],
+            ...data.daily_clicks.map((item) => [String(item.date), String(item.clicks)]),
+            [],
+            ["Top Websites"],
+            ["Website", "Clicks"],
+            ...data.top_websites.map((item) => [item.name, String(item.click_count)]),
+            [],
+            ["Top Categories"],
+            ["Category", "Clicks"],
+            ...data.top_categories.map((item) => [
+                item.website__category__name,
+                String(item.clicks),
+            ]),
+            [],
+            ["Recent Clicks"],
+            ["Type", "Destination", "Referrer", "Time"],
+            ...data.recent_clicks.map((item) => [
+                item.type,
+                item.destination,
+                item.referrer,
+                item.created_at,
+            ]),
+        ];
+
+        const csv = rows
+            .map((row) =>
+                row
+                    .map((value) => `"${value.replace(/"/g, '""')}"`)
+                    .join(","),
+            )
+            .join("\r\n");
+
+        const blob = new Blob(["\uFEFF", csv], {
+            type: "text/csv;charset=utf-8;",
+        });
+
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+
+        link.href = url;
+        link.download = `jodchha-analytics-${new Date()
+            .toISOString()
+            .slice(0, 10)}.csv`;
+
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        URL.revokeObjectURL(url);
     }
-  }
-
-  function exportAnalyticsCsv() {
-    if (!data) return;
-
-    const rows: string[][] = [
-      ["Jodchha Analytics Report"],
-      ["Exported At", new Date().toISOString()],
-      ["Start Date", startDate || "Default period"],
-      ["End Date", endDate || "Today"],
-      [],
-      ["Daily Clicks"],
-      ["Date", "Clicks"],
-      ...data.daily_clicks.map((item) => [String(item.date), String(item.clicks)]),
-      [],
-      ["Top Websites"],
-      ["Website", "Clicks"],
-      ...data.top_websites.map((item) => [item.name, String(item.click_count)]),
-      [],
-      ["Top Categories"],
-      ["Category", "Clicks"],
-      ...data.top_categories.map((item) => [
-        item.website__category__name,
-        String(item.clicks),
-      ]),
-      [],
-      ["Recent Clicks"],
-      ["Type", "Destination", "Referrer", "Time"],
-      ...data.recent_clicks.map((item) => [
-        item.type,
-        item.destination,
-        item.referrer,
-        item.created_at,
-      ]),
-    ];
-
-    const csv = rows
-      .map((row) =>
-        row
-          .map((value) => `"${value.replace(/"/g, '""')}"`)
-          .join(","),
-      )
-      .join("\r\n");
-
-    const blob = new Blob(["\uFEFF", csv], {
-      type: "text/csv;charset=utf-8;",
-    });
-
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-
-    link.href = url;
-    link.download = `jodchha-analytics-${new Date()
-      .toISOString()
-      .slice(0, 10)}.csv`;
-
-    document.body.appendChild(link);
-    link.click();
-    link.remove();
-    URL.revokeObjectURL(url);
-  }
 
     function handleLogout() {
         sessionStorage.removeItem("jodchha_access_token");
@@ -231,6 +231,7 @@ export default function AdminDashboardPage() {
             >
                 Export CSV
             </button>
+           
             <button
                 type="button"
                 onClick={handleLogout}
@@ -332,11 +333,11 @@ export default function AdminDashboardPage() {
             </section>
 
 
-<DailyClicksChart
-  dailyClicks={data.daily_clicks}
-  range={range}
-  onRangeChange={setRange}
-/>
+            <DailyClicksChart
+                dailyClicks={data.daily_clicks}
+                range={range}
+                onRangeChange={setRange}
+            />
             <CategoryClicksChart categories={data.top_categories} />
             <section className="grid grid-cols-1 gap-6 lg:grid-cols-2">
                 <article className="rounded-xl border border-[var(--border)] bg-white p-6">
