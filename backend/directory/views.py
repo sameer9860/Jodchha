@@ -165,23 +165,19 @@ class AnalyticsDashboardView(generics.GenericAPIView):
 
         total_clicks = period_clicks.count()
 
-        today_start = timezone.make_aware(
-            datetime.combine(today, time.min)
-        )
-        tomorrow_start = today_start + timedelta(days=1)
+        today_start = timezone.make_aware(datetime.combine(today, time.min))
         week_start = now - timedelta(days=7)
         month_start = now - timedelta(days=30)
 
-        clicks_today = period_clicks.filter(
+        clicks_today = Click.objects.filter(
             created_at__gte=today_start,
-            created_at__lt=tomorrow_start,
         ).count()
 
-        clicks_week = period_clicks.filter(
+        clicks_week = Click.objects.filter(
             created_at__gte=week_start,
         ).count()
 
-        clicks_month = period_clicks.filter(
+        clicks_month = Click.objects.filter(
             created_at__gte=month_start,
         ).count()
 
@@ -193,11 +189,30 @@ class AnalyticsDashboardView(generics.GenericAPIView):
             .order_by("day")
         )
 
-        top_websites = (
-            Website.objects.filter(is_active=True)
-            .order_by("-click_count", "name")[:10]
-            .values("id", "name", "slug", "click_count")
+        top_websites_query = (
+            period_clicks
+            .filter(
+                website__isnull=False,
+                website__is_active=True,
+            )
+            .values(
+                "website__id",
+                "website__name",
+                "website__slug",
+            )
+            .annotate(click_count=Count("id"))
+            .order_by("-click_count", "website__name")[:10]
         )
+
+        top_websites = [
+            {
+                "id": item["website__id"],
+                "name": item["website__name"],
+                "slug": item["website__slug"],
+                "click_count": item["click_count"],
+            }
+            for item in top_websites_query
+        ]
 
         top_categories = (
             period_clicks.filter(website__isnull=False)
@@ -207,21 +222,10 @@ class AnalyticsDashboardView(generics.GenericAPIView):
         )
 
         recent_clicks = (
-            period_clicks.select_related("website", "short_link")
+            period_clicks
+            .select_related("website", "short_link")
             .order_by("-created_at")[:20]
         )
-
-        recent_data = [
-            {
-                "id": click.id,
-                "website": click.website.name if click.website else None,
-                "short_link": (
-                    click.short_link.code if click.short_link else None
-                ),
-                "created_at": click.created_at,
-            }
-            for click in recent_clicks
-        ]
 
         return Response(
             {
@@ -240,6 +244,21 @@ class AnalyticsDashboardView(generics.GenericAPIView):
                 ],
                 "top_websites": list(top_websites),
                 "top_categories": list(top_categories),
-                "recent_clicks": recent_data,
+                "recent_clicks": [
+                    {
+                        "id": click.id,
+                        "type": "website" if click.website_id else "short_link",
+                        "destination": (
+                            click.website.name
+                            if click.website_id
+                            else click.short_link.destination_url
+                            if click.short_link_id
+                            else "Unknown"
+                        ),
+                        "referrer": click.referrer or "Direct",
+                        "created_at": click.created_at.isoformat(),
+                    }
+                    for click in recent_clicks
+                ],
             }
         )
