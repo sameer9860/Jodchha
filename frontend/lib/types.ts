@@ -42,8 +42,9 @@ export type TopCategory = {
 
 export type RecentClick = {
   id: number;
-  website: string | null;
-  short_link: string | null;
+  type: "website" | "short_link";
+  destination: string;
+  referrer: string;
   created_at: string;
 };
 
