@@ -43,6 +43,13 @@ const tools = [
     status: "Available",
     href: "/tools/url-encoder",
   },
+  {
+    name: "Password Generator",
+    description: "Generate random passwords with customizable length and character options.",
+    icon: "🔐",
+    status: "Available",
+    href: "/tools/password-generator",
+  },
 ];
 
 export default function ToolGrid() {
