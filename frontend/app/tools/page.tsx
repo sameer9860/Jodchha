@@ -38,6 +38,13 @@ const tools = [
     status: "Available",
     href: "/tools/json-formatter",
   },
+  {
+    name: "URL Encoder & Decoder",
+    description: "Encode and decode URL components and query parameters.",
+    icon: "% ",
+    status: "Available",
+    href: "/tools/url-encoder",
+  },
 ];
 
 export const metadata = {
