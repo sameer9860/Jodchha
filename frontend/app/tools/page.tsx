@@ -31,6 +31,13 @@ const tools = [
     status: "Available",
     href: "/tools/word-counter",
   },
+  {
+    name: "JSON Formatter & Validator",
+    description: "Format, validate, and minify JSON directly in your browser.",
+    icon: "{ }",
+    status: "Available",
+    href: "/tools/json-formatter",
+  },
 ];
 
 export const metadata = {
