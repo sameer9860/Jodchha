@@ -50,6 +50,13 @@ const tools = [
     status: "Available",
     href: "/tools/password-generator",
   },
+  {
+    name: "Text Case Converter",
+    description: "Convert text to uppercase, lowercase, Title Case, and more.",
+    icon: "Aa",
+    status: "Available",
+    href: "/tools/case-converter",
+  },
 ];
 
 export default function ToolGrid() {
