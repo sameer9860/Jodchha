@@ -53,6 +53,13 @@ const tools = [
     href: "/tools/password-generator",
   },
   {
+    name: "Background Remover",
+    description: "Remove solid backgrounds from images and export a transparent PNG.",
+    icon: "✦",
+    status: "Available",
+    href: "/tools/background-remover",
+  },
+  {
     name: "Text Case Converter",
     description: "Convert text to uppercase, lowercase, Title Case, and more.",
     icon: "Aa",
