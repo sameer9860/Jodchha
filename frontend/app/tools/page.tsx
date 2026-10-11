@@ -24,6 +24,13 @@ const tools = [
     status: "Available",
     href: "/tools/file-converter",
   },
+  {
+    name: "Word & Character Counter",
+    description: "Count words, characters, sentences, and paragraphs instantly.",
+    icon: "Aa",
+    status: "Available",
+    href: "/tools/word-counter",
+  },
 ];
 
 export const metadata = {
