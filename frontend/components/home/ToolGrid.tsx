@@ -17,10 +17,17 @@ const tools = [
   },
   {
     name: "File Converter",
-    description: "Convert common files between useful formats.",
+    description: "Convert PNG, JPEG, and WebP images directly in the browser.",
     icon: "⇄",
     status: "Available",
     href: "/tools/file-converter",
+  },
+  {
+    name: "Word & Character Counter",
+    description: "Count words, characters, sentences, and paragraphs instantly.",
+    icon: "Aa",
+    status: "Available",
+    href: "/tools/word-counter",
   },
 ];
 
