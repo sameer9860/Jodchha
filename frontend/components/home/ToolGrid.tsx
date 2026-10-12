@@ -13,7 +13,7 @@ const tools = [
     description: "Create a shorter, shareable link from a long URL.",
     icon: "↗",
     status: "Available",
-    href: "/shortener",
+    href: "/tools/shortener",
   },
   {
     name: "File Converter",
