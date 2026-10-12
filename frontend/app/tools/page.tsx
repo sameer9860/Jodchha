@@ -69,9 +69,9 @@ const tools = [
 ];
 
 export const metadata = {
-  title: "Online Tools",
+  title: "Online Tools | Jodchha",
   description:
-    "Useful online tools including URL shortener and QR code generator.",
+    "Explore free online tools on Jodchha, including a URL shortener, QR code generator, QR code scanner, image converter, word counter, JSON formatter, URL encoder, password generator, and text case converter.",
 };
 
 export default function ToolsPage() {
