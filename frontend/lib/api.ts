@@ -8,7 +8,17 @@ import type {
 const API_URL =
   process.env.NEXT_PUBLIC_API_URL ?? "http://127.0.0.1:8000/api";
 
-  export function getWebsiteRedirectUrl(slug: string): string {
+export class ApiError extends Error {
+  status: number;
+
+  constructor(message: string, status: number) {
+    super(message);
+    this.name = "ApiError";
+    this.status = status;
+  }
+}
+
+export function getWebsiteRedirectUrl(slug: string): string {
   return `${API_URL}/go/${encodeURIComponent(slug)}/`;
 }
 
@@ -32,9 +42,7 @@ export async function getFeaturedWebsites(): Promise<Website[]> {
   return response.json();
 }
 
-export async function getSearchResults(
-  query: string,
-): Promise<Website[]> {
+export async function getSearchResults(query: string): Promise<Website[]> {
   const response = await fetch(
     `${API_URL}/websites/?search=${encodeURIComponent(query)}`,
   );
@@ -94,6 +102,35 @@ export function getShortLinkUrl(code: string): string {
   return `${API_URL}/s/${encodeURIComponent(code)}/`;
 }
 
+async function readErrorDetail(response: Response, fallback: string) {
+  try {
+    const payload = (await response.json()) as {
+      detail?: string | string[] | Record<string, string[]>;
+      non_field_errors?: string[];
+    };
+
+    if (typeof payload.detail === "string") {
+      return payload.detail;
+    }
+
+    if (Array.isArray(payload.detail)) {
+      return payload.detail.join(" ");
+    }
+
+    if (Array.isArray(payload.non_field_errors)) {
+      return payload.non_field_errors.join(" ");
+    }
+
+    if (payload.detail && typeof payload.detail === "object") {
+      return Object.values(payload.detail).flat().join(" ");
+    }
+  } catch {
+    // Ignore JSON parse failures and use the fallback message.
+  }
+
+  return fallback;
+}
+
 export async function loginAdmin(
   username: string,
   password: string,
@@ -110,7 +147,11 @@ export async function loginAdmin(
   });
 
   if (!response.ok) {
-    throw new Error("Invalid username or password");
+    const detail = await readErrorDetail(
+      response,
+      "Invalid username or password",
+    );
+    throw new ApiError(detail, response.status);
   }
 
   return response.json();
@@ -130,7 +171,7 @@ export async function refreshAccessToken(
   });
 
   if (!response.ok) {
-    throw new Error("Unable to refresh access token");
+    throw new ApiError("Unable to refresh access token", response.status);
   }
 
   return response.json();
@@ -141,7 +182,7 @@ async function authenticatedFetch(endpoint: string): Promise<Response> {
   const refreshToken = sessionStorage.getItem("jodchha_refresh_token");
 
   if (!accessToken) {
-    throw new Error("Authentication required");
+    throw new ApiError("Authentication required", 401);
   }
 
   const request = (token: string) =>
@@ -172,10 +213,10 @@ async function authenticatedFetch(endpoint: string): Promise<Response> {
   } catch {
     sessionStorage.removeItem("jodchha_access_token");
     sessionStorage.removeItem("jodchha_refresh_token");
-    throw new Error("Session expired. Please sign in again.");
+    sessionStorage.removeItem("jodchha_admin_username");
+    throw new ApiError("Session expired. Please sign in again.", 401);
   }
 }
-
 
 export async function getAnalyticsDashboard(
   startDate?: string,
@@ -199,7 +240,25 @@ export async function getAnalyticsDashboard(
   const response = await authenticatedFetch(endpoint);
 
   if (!response.ok) {
-    throw new Error("Failed to fetch analytics");
+    if (response.status === 401) {
+      sessionStorage.removeItem("jodchha_access_token");
+      sessionStorage.removeItem("jodchha_refresh_token");
+      sessionStorage.removeItem("jodchha_admin_username");
+      throw new ApiError("Session expired. Please sign in again.", 401);
+    }
+
+    if (response.status === 403) {
+      throw new ApiError(
+        "Admin access required. Sign in with a staff account.",
+        403,
+      );
+    }
+
+    const detail = await readErrorDetail(
+      response,
+      "Failed to fetch analytics",
+    );
+    throw new ApiError(detail, response.status);
   }
 
   return response.json();
