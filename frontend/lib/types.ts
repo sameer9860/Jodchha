@@ -49,6 +49,8 @@ export type RecentClick = {
 };
 
 export type AnalyticsDashboard = {
+  start_date: string;
+  end_date: string;
   summary: AnalyticsSummary;
   daily_clicks: DailyClick[];
   top_websites: TopWebsite[];
@@ -59,5 +61,6 @@ export type AnalyticsDashboard = {
 export type AuthTokens = {
   access: string;
   refresh: string;
+  username?: string;
 };
 
