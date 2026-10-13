@@ -1,18 +1,29 @@
-import { getCategories, getFeaturedWebsites } from "@/lib/api";
+import { ApiError, getCategories, getFeaturedWebsites } from "@/lib/api";
 import CategoryGrid from "@/components/home/CategoryGrid";
 import FeaturedWebsites from "@/components/home/FeaturedWebsites";
 import Hero from "@/components/home/Hero";
 import ToolGrid from "@/components/home/ToolGrid";
-import Footer from "@/components/layout/Footer";
-import Navbar from "@/components/layout/Navbar";
+import SiteShell from "@/components/layout/SiteShell";
+import type { Category, Website } from "@/lib/types";
 
 const siteUrl = "https://jodchha.com.np";
 
 export default async function Home() {
-  const [categories, websites] = await Promise.all([
-    getCategories(),
-    getFeaturedWebsites(),
-  ]);
+  let categories: Category[] = [];
+  let websites: Website[] = [];
+  let loadError = false;
+
+  try {
+    [categories, websites] = await Promise.all([
+      getCategories(),
+      getFeaturedWebsites(),
+    ]);
+  } catch (error) {
+    loadError = true;
+    if (!(error instanceof ApiError)) {
+      console.error(error);
+    }
+  }
 
   const structuredData = {
     "@context": "https://schema.org",
@@ -40,7 +51,7 @@ export default async function Home() {
   };
 
   return (
-    <div className="min-h-screen bg-[var(--background)]">
+    <SiteShell>
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{
@@ -48,16 +59,25 @@ export default async function Home() {
         }}
       />
 
-      <Navbar />
-
       <main>
         <Hero />
+
+        {loadError && (
+          <div className="mx-auto max-w-6xl px-6">
+            <div
+              role="alert"
+              className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800"
+            >
+              Directory data is temporarily unavailable. Tools below still
+              work.
+            </div>
+          </div>
+        )}
+
         <CategoryGrid categories={categories} />
         <FeaturedWebsites websites={websites} />
         <ToolGrid />
       </main>
-
-      <Footer />
-    </div>
+    </SiteShell>
   );
 }
