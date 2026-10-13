@@ -34,31 +34,31 @@ export const metadata: Metadata = {
     follow: true,
   },
 
- openGraph: {
-  type: "website",
-  siteName: "Jodchha",
-  title: "Jodchha — Useful Websites, Tools & Online Services",
-  description:
-    "Discover useful websites, online services, and free tools in one simple place.",
-  url: siteUrl,
-  locale: "en_US",
-  images: [
-    {
-      url: "/og-image.png",
-      width: 1200,
-      height: 630,
-      alt: "Jodchha — Connect. Discover. Go.",
-    },
-  ],
-},
+  openGraph: {
+    type: "website",
+    siteName: "Jodchha",
+    title: "Jodchha — Useful Websites, Tools & Online Services",
+    description:
+      "Discover useful websites, online services, and free tools in one simple place.",
+    url: siteUrl,
+    locale: "en_US",
+    images: [
+      {
+        url: "/og-image.jpg",
+        width: 1200,
+        height: 630,
+        alt: "Jodchha — Connect. Discover. Go.",
+      },
+    ],
+  },
 
-twitter: {
-  card: "summary_large_image",
-  title: "Jodchha — Useful Websites, Tools & Online Services",
-  description:
-    "Discover useful websites, online services, and free tools in one simple place.",
-  images: ["/og-image.png"],
-},
+  twitter: {
+    card: "summary_large_image",
+    title: "Jodchha — Useful Websites, Tools & Online Services",
+    description:
+      "Discover useful websites, online services, and free tools in one simple place.",
+    images: ["/og-image.jpg"],
+  },
 
   alternates: {
     canonical: siteUrl,
