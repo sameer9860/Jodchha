@@ -2,9 +2,12 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 import {
+  ApiError,
   getSearchResults,
   getWebsiteRedirectUrl,
 } from "@/lib/api";
+import SearchBar from "@/components/home/SearchBar";
+import SiteShell from "@/components/layout/SiteShell";
 import type { Website } from "@/lib/types";
 
 type SearchPageProps = {
@@ -30,6 +33,7 @@ export async function generateMetadata({
     },
   };
 }
+
 export default async function SearchPage({
   searchParams,
 }: SearchPageProps) {
@@ -37,14 +41,22 @@ export default async function SearchPage({
   const query = params.q?.trim() ?? "";
 
   let websites: Website[] = [];
+  let searchError = "";
 
   if (query) {
-    websites = await getSearchResults(query);
+    try {
+      websites = await getSearchResults(query);
+    } catch (error) {
+      searchError =
+        error instanceof ApiError
+          ? error.message
+          : "Unable to search right now. Please try again.";
+    }
   }
 
   return (
-    <main className="min-h-screen bg-[var(--background)]">
-      <div className="mx-auto max-w-6xl px-6 py-16">
+    <SiteShell>
+      <main className="mx-auto max-w-6xl px-6 py-16">
         <Link
           href="/"
           className="text-sm font-semibold text-[var(--primary)] hover:text-[var(--primary-dark)]"
@@ -61,15 +73,27 @@ export default async function SearchPage({
             {query ? `Results for "${query}"` : "Search Jodchha"}
           </h1>
 
-          {query && (
-            <p className="mt-2 text-[var(--muted)]">
+          <SearchBar initialQuery={query} className="mt-6 w-full max-w-2xl" />
+
+          {query && !searchError && (
+            <p className="mt-4 text-[var(--muted)]">
               {websites.length}{" "}
               {websites.length === 1 ? "website" : "websites"} found.
             </p>
           )}
         </div>
 
-        {!query ? (
+        {searchError ? (
+          <div
+            role="alert"
+            className="mt-10 rounded-xl border border-red-200 bg-red-50 p-8 text-center"
+          >
+            <h2 className="text-xl font-semibold text-[var(--foreground)]">
+              Search unavailable
+            </h2>
+            <p className="mt-2 text-[var(--muted)]">{searchError}</p>
+          </div>
+        ) : !query ? (
           <p className="mt-10 text-[var(--muted)]">
             Enter a search term to discover useful websites.
           </p>
@@ -122,7 +146,7 @@ export default async function SearchPage({
             ))}
           </div>
         )}
-      </div>
-    </main>
+      </main>
+    </SiteShell>
   );
 }
