@@ -1,9 +1,11 @@
-from datetime import date, time, datetime, timedelta
+from datetime import date, datetime, time, timedelta
 
 from django.db.models import Count, F, Q
+from django.db.models.functions import TruncDate
 from django.shortcuts import get_object_or_404, redirect
 from django.utils import timezone
 from rest_framework import generics, status
+from rest_framework.permissions import IsAdminUser
 from rest_framework.response import Response
 
 from .models import Category, Click, ShortLink, Website
@@ -13,8 +15,6 @@ from .serializers import (
     WebsiteSerializer,
 )
 from .utils import generate_short_code
-
-from rest_framework.permissions import IsAdminUser
 
 class CategoryListView(generics.ListAPIView):
     queryset = Category.objects.filter(is_active=True)
@@ -143,13 +143,13 @@ class AnalyticsDashboardView(generics.GenericAPIView):
 
         if start_date > end_date:
             return Response(
-        {
-            "detail": (
-                "Start date must be before or equal to the end date."
+                {
+                    "detail": (
+                        "Start date must be before or equal to the end date."
+                    )
+                },
+                status=status.HTTP_400_BAD_REQUEST,
             )
-        },
-        status=status.HTTP_400_BAD_REQUEST,
-    )
 
         start_datetime = timezone.make_aware(
             datetime.combine(start_date, time.min)
@@ -182,16 +182,14 @@ class AnalyticsDashboardView(generics.GenericAPIView):
         ).count()
 
         daily_clicks = (
-            period_clicks
-            .extra(select={"day": "DATE(created_at)"})
+            period_clicks.annotate(day=TruncDate("created_at"))
             .values("day")
             .annotate(clicks=Count("id"))
             .order_by("day")
         )
 
         top_websites_query = (
-            period_clicks
-            .filter(
+            period_clicks.filter(
                 website__isnull=False,
                 website__is_active=True,
             )
@@ -222,13 +220,22 @@ class AnalyticsDashboardView(generics.GenericAPIView):
         )
 
         recent_clicks = (
-            period_clicks
-            .select_related("website", "short_link")
-            .order_by("-created_at")[:20]
+            period_clicks.select_related("website", "short_link").order_by(
+                "-created_at"
+            )[:20]
         )
+
+        def format_day(value):
+            if value is None:
+                return ""
+            if isinstance(value, date):
+                return value.isoformat()
+            return str(value)[:10]
 
         return Response(
             {
+                "start_date": start_date.isoformat(),
+                "end_date": end_date.isoformat(),
                 "summary": {
                     "total_clicks": total_clicks,
                     "clicks_today": clicks_today,
@@ -237,17 +244,19 @@ class AnalyticsDashboardView(generics.GenericAPIView):
                 },
                 "daily_clicks": [
                     {
-                        "date": item["day"].isoformat(),
+                        "date": format_day(item["day"]),
                         "clicks": item["clicks"],
                     }
                     for item in daily_clicks
                 ],
-                "top_websites": list(top_websites),
+                "top_websites": top_websites,
                 "top_categories": list(top_categories),
                 "recent_clicks": [
                     {
                         "id": click.id,
-                        "type": "website" if click.website_id else "short_link",
+                        "type": (
+                            "website" if click.website_id else "short_link"
+                        ),
                         "destination": (
                             click.website.name
                             if click.website_id
