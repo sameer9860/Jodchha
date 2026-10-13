@@ -3,7 +3,7 @@
 import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
 
-import { loginAdmin } from "@/lib/api";
+import { ApiError, loginAdmin } from "@/lib/api";
 
 export default function AdminLoginPage() {
   const router = useRouter();
@@ -24,10 +24,18 @@ export default function AdminLoginPage() {
 
       sessionStorage.setItem("jodchha_access_token", tokens.access);
       sessionStorage.setItem("jodchha_refresh_token", tokens.refresh);
+      sessionStorage.setItem(
+        "jodchha_admin_username",
+        tokens.username ?? username,
+      );
 
       router.push("/admin");
-    } catch {
-      setError("Invalid username or password.");
+    } catch (err) {
+      if (err instanceof ApiError) {
+        setError(err.message);
+      } else {
+        setError("Invalid username or password.");
+      }
     } finally {
       setLoading(false);
     }
@@ -46,7 +54,7 @@ export default function AdminLoginPage() {
           </h1>
 
           <p className="mt-2 text-sm text-[var(--muted)]">
-            Sign in to access the analytics dashboard.
+            Sign in with a staff account to access analytics.
           </p>
         </div>
 
