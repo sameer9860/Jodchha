@@ -1,5 +1,7 @@
 from django.urls import path
+from rest_framework_simplejwt.views import TokenRefreshView
 
+from .auth import AdminTokenObtainPairView
 from .views import (
     AnalyticsDashboardView,
     CategoryListView,
@@ -9,24 +11,16 @@ from .views import (
     website_redirect,
 )
 
-from rest_framework_simplejwt.views import (
-    TokenObtainPairView,
-    TokenRefreshView,
-)
-
 
 urlpatterns = [
     path("categories/", CategoryListView.as_view(), name="category-list"),
     path("websites/", WebsiteListView.as_view(), name="website-list"),
     path("go/<slug:slug>/", website_redirect, name="website-redirect"),
-    
     path(
-    "analytics/",
-    AnalyticsDashboardView.as_view(),
-    name="analytics-dashboard",
-    
-    
-),
+        "analytics/",
+        AnalyticsDashboardView.as_view(),
+        name="analytics-dashboard",
+    ),
     path(
         "shortlinks/",
         ShortLinkCreateView.as_view(),
@@ -37,14 +31,14 @@ urlpatterns = [
         short_link_redirect,
         name="shortlink-redirect",
     ),
-   path(
-    "auth/token/",
-    TokenObtainPairView.as_view(),
-    name="token-obtain-pair",
-),
-path(
-    "auth/token/refresh/",
-    TokenRefreshView.as_view(),
-    name="token-refresh",
-),
+    path(
+        "auth/token/",
+        AdminTokenObtainPairView.as_view(),
+        name="token-obtain-pair",
+    ),
+    path(
+        "auth/token/refresh/",
+        TokenRefreshView.as_view(),
+        name="token-refresh",
+    ),
 ]
