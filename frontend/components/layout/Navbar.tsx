@@ -8,9 +8,9 @@ export default function Navbar() {
 
   const navLinks = [
     { href: "/", label: "Home" },
-    { href: "#discover", label: "Discover" },
+    { href: "/#discover", label: "Discover" },
     { href: "/tools", label: "Tools" },
-    { href: "#categories", label: "Categories" },
+    { href: "/#categories", label: "Categories" },
   ];
 
   return (
@@ -38,7 +38,7 @@ export default function Navbar() {
 
           <div className="hidden md:block">
             <Link
-              href="#discover"
+              href="/#discover"
               className="rounded-lg bg-[var(--primary)] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[var(--primary-dark)]"
             >
               Explore
@@ -81,7 +81,7 @@ export default function Navbar() {
               ))}
 
               <Link
-                href="#discover"
+                href="/#discover"
                 onClick={() => setIsOpen(false)}
                 className="mt-2 inline-flex items-center justify-center rounded-lg bg-[var(--primary)] px-4 py-2 text-sm font-semibold text-white"
               >
