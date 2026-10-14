@@ -8,6 +8,9 @@ import type {
 const API_URL =
   process.env.NEXT_PUBLIC_API_URL ?? "http://127.0.0.1:8000/api";
 
+const SITE_URL =
+  process.env.NEXT_PUBLIC_SITE_URL ?? "https://jodchha.com.np";
+
 export class ApiError extends Error {
   status: number;
 
@@ -18,54 +21,54 @@ export class ApiError extends Error {
   }
 }
 
+async function fetchJson<T>(url: string, fallbackMessage: string): Promise<T> {
+  let response: Response;
+
+  try {
+    response = await fetch(url);
+  } catch {
+    throw new ApiError(fallbackMessage, 503);
+  }
+
+  if (!response.ok) {
+    throw new ApiError(fallbackMessage, response.status);
+  }
+
+  return response.json();
+}
+
 export function getWebsiteRedirectUrl(slug: string): string {
   return `${API_URL}/go/${encodeURIComponent(slug)}/`;
 }
 
 export async function getCategories(): Promise<Category[]> {
-  const response = await fetch(`${API_URL}/categories/`);
-
-  if (!response.ok) {
-    throw new Error("Failed to fetch categories");
-  }
-
-  return response.json();
+  return fetchJson<Category[]>(
+    `${API_URL}/categories/`,
+    "Failed to fetch categories",
+  );
 }
 
 export async function getFeaturedWebsites(): Promise<Website[]> {
-  const response = await fetch(`${API_URL}/websites/?featured=true`);
-
-  if (!response.ok) {
-    throw new Error("Failed to fetch featured websites");
-  }
-
-  return response.json();
+  return fetchJson<Website[]>(
+    `${API_URL}/websites/?featured=true`,
+    "Failed to fetch featured websites",
+  );
 }
 
 export async function getSearchResults(query: string): Promise<Website[]> {
-  const response = await fetch(
+  return fetchJson<Website[]>(
     `${API_URL}/websites/?search=${encodeURIComponent(query)}`,
+    "Failed to search websites",
   );
-
-  if (!response.ok) {
-    throw new Error("Failed to search websites");
-  }
-
-  return response.json();
 }
 
 export async function getCategoryWebsites(
   category: string,
 ): Promise<Website[]> {
-  const response = await fetch(
+  return fetchJson<Website[]>(
     `${API_URL}/websites/?category=${encodeURIComponent(category)}`,
+    "Failed to fetch category websites",
   );
-
-  if (!response.ok) {
-    throw new Error("Failed to fetch category websites");
-  }
-
-  return response.json();
 }
 
 export type ShortLink = {
@@ -81,25 +84,37 @@ export type ShortLink = {
 export async function createShortLink(
   destinationUrl: string,
 ): Promise<ShortLink> {
-  const response = await fetch(`${API_URL}/shortlinks/`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      destination_url: destinationUrl,
-    }),
-  });
+  let response: Response;
+
+  try {
+    response = await fetch(`${API_URL}/shortlinks/`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        destination_url: destinationUrl,
+      }),
+    });
+  } catch {
+    throw new ApiError("Failed to create short link", 503);
+  }
 
   if (!response.ok) {
-    throw new Error("Failed to create short link");
+    throw new ApiError("Failed to create short link", response.status);
   }
 
   return response.json();
 }
 
 export function getShortLinkUrl(code: string): string {
-  return `${API_URL}/s/${encodeURIComponent(code)}/`;
+  const path = `/s/${encodeURIComponent(code)}`;
+
+  if (typeof window !== "undefined" && window.location?.origin) {
+    return `${window.location.origin}${path}`;
+  }
+
+  return `${SITE_URL.replace(/\/$/, "")}${path}`;
 }
 
 async function readErrorDetail(response: Response, fallback: string) {
