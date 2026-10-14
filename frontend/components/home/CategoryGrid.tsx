@@ -10,9 +10,8 @@ export default function CategoryGrid({
   categories,
 }: CategoryGridProps) {
   return (
-    <section id="categories" className="mx-auto max-w-6xl px-6 py-16">
+    <section id="categories" className="mx-auto max-w-6xl scroll-mt-24 px-6 py-16">
       <div className="mb-8">
-
         <p className="text-sm font-semibold uppercase tracking-wider text-[var(--primary)]">
           Explore
         </p>
@@ -26,28 +25,39 @@ export default function CategoryGrid({
         </p>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {categories.map((category) => (
-          <Link
-            key={category.id}
-            href={`/categories/${category.slug}`}
-            aria-label={`Open ${category.name} category`}
-            className="group block rounded-xl border border-[var(--border)] bg-[var(--white)] p-5 text-left transition hover:-translate-y-1 hover:border-blue-200 hover:shadow-md"
-          >
-            <span className="text-2xl" aria-hidden="true">
-              {category.icon || "🔗"}
-            </span>
+      {categories.length === 0 ? (
+        <div className="rounded-xl border border-[var(--border)] bg-[var(--white)] p-8 text-center">
+          <h3 className="text-lg font-semibold text-[var(--foreground)]">
+            No categories yet
+          </h3>
+          <p className="mt-2 text-sm text-[var(--muted)]">
+            Categories will appear here once they are published.
+          </p>
+        </div>
+      ) : (
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {categories.map((category) => (
+            <Link
+              key={category.id}
+              href={`/categories/${category.slug}`}
+              aria-label={`Open ${category.name} category`}
+              className="group block rounded-xl border border-[var(--border)] bg-[var(--white)] p-5 text-left transition hover:-translate-y-1 hover:border-blue-200 hover:shadow-md"
+            >
+              <span className="text-2xl" aria-hidden="true">
+                {category.icon || "🔗"}
+              </span>
 
-            <h3 className="mt-4 font-semibold text-[var(--foreground)] group-hover:text-[var(--primary)]">
-              {category.name}
-            </h3>
+              <h3 className="mt-4 font-semibold text-[var(--foreground)] group-hover:text-[var(--primary)]">
+                {category.name}
+              </h3>
 
-            <p className="mt-1 text-sm leading-6 text-[var(--muted)]">
-              {category.description}
-            </p>
-          </Link>
-        ))}
-      </div>
+              <p className="mt-1 text-sm leading-6 text-[var(--muted)]">
+                {category.description}
+              </p>
+            </Link>
+          ))}
+        </div>
+      )}
     </section>
   );
 }
