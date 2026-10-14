@@ -1,11 +1,23 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
-export default function SearchBar() {
+type SearchBarProps = {
+  initialQuery?: string;
+  className?: string;
+};
+
+export default function SearchBar({
+  initialQuery = "",
+  className = "mt-8 w-full max-w-2xl",
+}: SearchBarProps) {
   const router = useRouter();
-  const [query, setQuery] = useState("");
+  const [query, setQuery] = useState(initialQuery);
+
+  useEffect(() => {
+    setQuery(initialQuery);
+  }, [initialQuery]);
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -20,7 +32,7 @@ export default function SearchBar() {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="mt-8 w-full max-w-2xl">
+    <form onSubmit={handleSubmit} className={className}>
       <div className="flex flex-col gap-3 sm:flex-row">
         <div className="relative flex-1">
           <input
