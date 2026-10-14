@@ -9,7 +9,7 @@ export default function FeaturedWebsites({
   websites,
 }: FeaturedWebsitesProps) {
   return (
-    <section id="discover" className="mx-auto max-w-6xl px-6 py-16">
+    <section id="discover" className="mx-auto max-w-6xl scroll-mt-24 px-6 py-16">
       <div className="mb-8">
         <p className="text-sm font-semibold uppercase tracking-wider text-[var(--primary)]">
           Discover
@@ -24,45 +24,56 @@ export default function FeaturedWebsites({
         </p>
       </div>
 
-      <div className="grid gap-6 md:grid-cols-3">
-        {websites.map((website) => (
-          <a
-            key={website.id}
-            href={getWebsiteRedirectUrl(website.slug)}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="group flex flex-col rounded-xl border border-[var(--border)] bg-[var(--white)] p-6 transition hover:-translate-y-1 hover:border-blue-200 hover:shadow-md"
-          >
-            <div className="flex items-start justify-between">
-              <span
-                className="flex h-12 w-12 items-center justify-center rounded-xl bg-slate-50 text-2xl"
-                aria-hidden="true"
-              >
-                {website.category.icon || "🔗"}
+      {websites.length === 0 ? (
+        <div className="rounded-xl border border-[var(--border)] bg-[var(--white)] p-8 text-center">
+          <h3 className="text-lg font-semibold text-[var(--foreground)]">
+            No featured websites yet
+          </h3>
+          <p className="mt-2 text-sm text-[var(--muted)]">
+            Featured listings will appear here once they are added.
+          </p>
+        </div>
+      ) : (
+        <div className="grid gap-6 md:grid-cols-3">
+          {websites.map((website) => (
+            <a
+              key={website.id}
+              href={getWebsiteRedirectUrl(website.slug)}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="group flex flex-col rounded-xl border border-[var(--border)] bg-[var(--white)] p-6 transition hover:-translate-y-1 hover:border-blue-200 hover:shadow-md"
+            >
+              <div className="flex items-start justify-between">
+                <span
+                  className="flex h-12 w-12 items-center justify-center rounded-xl bg-slate-50 text-2xl"
+                  aria-hidden="true"
+                >
+                  {website.category.icon || "🔗"}
+                </span>
+
+                <span className="rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold text-[var(--primary)]">
+                  {website.category.name}
+                </span>
+              </div>
+
+              <h3 className="mt-5 text-lg font-semibold text-[var(--foreground)]">
+                {website.name}
+              </h3>
+
+              <p className="mt-2 flex-1 text-sm leading-6 text-[var(--muted)]">
+                {website.description}
+              </p>
+
+              <span className="mt-6 inline-flex items-center font-semibold text-[var(--primary)] transition hover:text-[var(--primary-dark)]">
+                Visit Website
+                <span className="ml-2 transition group-hover:translate-x-1">
+                  →
+                </span>
               </span>
-
-              <span className="rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold text-[var(--primary)]">
-                {website.category.name}
-              </span>
-            </div>
-
-            <h3 className="mt-5 text-lg font-semibold text-[var(--foreground)]">
-              {website.name}
-            </h3>
-
-            <p className="mt-2 flex-1 text-sm leading-6 text-[var(--muted)]">
-              {website.description}
-            </p>
-
-            <span className="mt-6 inline-flex items-center font-semibold text-[var(--primary)] transition hover:text-[var(--primary-dark)]">
-              Visit Website
-              <span className="ml-2 transition group-hover:translate-x-1">
-                →
-              </span>
-            </span>
-          </a>
-        ))}
-      </div>
+            </a>
+          ))}
+        </div>
+      )}
     </section>
   );
 }
