@@ -2,6 +2,7 @@
 
 import { FormEvent, useState } from "react";
 import QRCode from "qrcode";
+import { toast } from "sonner";
 
 export default function QrCodeForm() {
   const [value, setValue] = useState("");
@@ -14,7 +15,9 @@ export default function QrCodeForm() {
     const trimmedValue = value.trim();
 
     if (!trimmedValue) {
-      setError("Please enter a URL or text.");
+      const message = "Please enter a URL or text.";
+      setError(message);
+      toast.error(message);
       setQrCode("");
       return;
     }
@@ -29,8 +32,11 @@ export default function QrCodeForm() {
       });
 
       setQrCode(dataUrl);
+      toast.success("QR code generated");
     } catch {
-      setError("Unable to generate the QR code. Please try again.");
+      const message = "Unable to generate the QR code. Please try again.";
+      setError(message);
+      toast.error(message);
       setQrCode("");
     }
   }
@@ -44,6 +50,7 @@ export default function QrCodeForm() {
     link.href = qrCode;
     link.download = "jodchha-qr-code.png";
     link.click();
+    toast.success("QR code downloaded");
   }
 
   return (
