@@ -34,6 +34,28 @@ a {
 }
 
 button,
-input {
+input,
+textarea,
+select {
   font: inherit;
+}
+
+@keyframes jodchha-shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+.animate-pulse {
+  background-image: linear-gradient(
+    90deg,
+    rgb(226 232 240 / 0.7) 0%,
+    rgb(241 245 249 / 0.95) 50%,
+    rgb(226 232 240 / 0.7) 100%
+  );
+  background-size: 200% 100%;
+  animation: jodchha-shimmer 1.4s ease-in-out infinite;
 }
