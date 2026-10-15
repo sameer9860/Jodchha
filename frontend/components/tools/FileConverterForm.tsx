@@ -1,6 +1,7 @@
 "use client";
 
 import { ChangeEvent, DragEvent, useEffect, useRef, useState } from "react";
+import { toast } from "sonner";
 
 const validTypes = ["image/png", "image/jpeg", "image/webp"] as const;
 const maxFileSize = 10 * 1024 * 1024;
@@ -33,14 +34,20 @@ export default function FileConverterForm() {
     }
 
     if (!validTypes.includes(file.type as (typeof validTypes)[number])) {
-      setError("Unsupported file type. Please upload a PNG, JPEG, or WebP image.");
+      const message =
+        "Unsupported file type. Please upload a PNG, JPEG, or WebP image.";
+      setError(message);
+      toast.error(message);
       setSelectedFile(null);
       setConvertedUrl("");
       return;
     }
 
     if (file.size > maxFileSize) {
-      setError("File is too large. Please upload an image smaller than 10 MB.");
+      const message =
+        "File is too large. Please upload an image smaller than 10 MB.";
+      setError(message);
+      toast.error(message);
       setSelectedFile(null);
       setConvertedUrl("");
       return;
@@ -78,7 +85,9 @@ export default function FileConverterForm() {
 
   function handleConvert() {
     if (!selectedFile || !sourceUrl) {
-      setError("Please upload an image before converting.");
+      const message = "Please upload an image before converting.";
+      setError(message);
+      toast.error(message);
       return;
     }
 
@@ -95,7 +104,10 @@ export default function FileConverterForm() {
       const context = canvas.getContext("2d");
 
       if (!context) {
-        setError("This browser could not process the image. Please try again.");
+        const message =
+          "This browser could not process the image. Please try again.";
+        setError(message);
+        toast.error(message);
         setIsConverting(false);
         return;
       }
@@ -110,7 +122,9 @@ export default function FileConverterForm() {
       canvas.toBlob(
         (blob) => {
           if (!blob) {
-            setError("Conversion failed. Please try another image.");
+            const message = "Conversion failed. Please try another image.";
+            setError(message);
+            toast.error(message);
             setIsConverting(false);
             return;
           }
@@ -121,6 +135,7 @@ export default function FileConverterForm() {
 
           setConvertedUrl(URL.createObjectURL(blob));
           setIsConverting(false);
+          toast.success("Image converted");
         },
         outputType,
         0.92,
@@ -128,7 +143,9 @@ export default function FileConverterForm() {
     };
 
     image.onerror = () => {
-      setError("Could not read this image. Please try a different file.");
+      const message = "Could not read this image. Please try a different file.";
+      setError(message);
+      toast.error(message);
       setIsConverting(false);
     };
 
@@ -148,6 +165,7 @@ export default function FileConverterForm() {
     link.href = convertedUrl;
     link.download = `${baseName}.${extension}`;
     link.click();
+    toast.success("Download started");
   }
 
   return (
