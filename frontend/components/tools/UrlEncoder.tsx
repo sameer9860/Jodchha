@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { toast } from "sonner";
 
 type UrlMode = "encode" | "decode";
 
@@ -9,16 +10,16 @@ export default function UrlEncoder() {
   const [output, setOutput] = useState("");
   const [mode, setMode] = useState<UrlMode>("encode");
   const [error, setError] = useState("");
-  const [copyMessage, setCopyMessage] = useState("");
 
   function processUrl(nextMode: UrlMode) {
     setMode(nextMode);
     setError("");
     setOutput("");
-    setCopyMessage("");
 
     if (!input) {
-      setError("Please enter text or a URL first.");
+      const message = "Please enter text or a URL first.";
+      setError(message);
+      toast.error(message);
       return;
     }
 
@@ -29,10 +30,12 @@ export default function UrlEncoder() {
           : decodeURIComponent(input);
 
       setOutput(result);
+      toast.success(nextMode === "encode" ? "URL encoded" : "URL decoded");
     } catch {
-      setError(
-        "Unable to decode this input. Check that the encoded URL or text is valid.",
-      );
+      const message =
+        "Unable to decode this input. Check that the encoded URL or text is valid.";
+      setError(message);
+      toast.error(message);
     }
   }
 
@@ -41,9 +44,9 @@ export default function UrlEncoder() {
 
     try {
       await navigator.clipboard.writeText(output);
-      setCopyMessage("Result copied to clipboard.");
+      toast.success("Result copied");
     } catch {
-      setCopyMessage("Copy failed. Please select and copy the result manually.");
+      toast.error("Copy failed. Please select and copy the result manually.");
     }
   }
 
@@ -51,7 +54,6 @@ export default function UrlEncoder() {
     setInput("");
     setOutput("");
     setError("");
-    setCopyMessage("");
   }
 
   return (
@@ -71,7 +73,6 @@ export default function UrlEncoder() {
             setInput(event.target.value);
             setOutput("");
             setError("");
-            setCopyMessage("");
           }}
           placeholder="Enter a URL, query parameter, or text..."
           rows={6}
@@ -140,10 +141,6 @@ export default function UrlEncoder() {
             {output || "Your result will appear here."}
           </pre>
         )}
-
-        <p aria-live="polite" className="mt-3 text-sm text-[var(--muted)]">
-          {copyMessage}
-        </p>
       </section>
 
       <p className="text-sm leading-6 text-[var(--muted)]">
