@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { toast } from "sonner";
 
 type CaseType =
   | "upper"
@@ -61,31 +62,34 @@ const cases: { label: string; value: CaseType }[] = [
 export default function CaseConverter() {
   const [input, setInput] = useState("");
   const [output, setOutput] = useState("");
-  const [message, setMessage] = useState("");
 
   function handleConvert(type: CaseType) {
+    if (!input) {
+      toast.error("Enter some text first.");
+      return;
+    }
+
     setOutput(convertCase(input, type));
-    setMessage("");
+    toast.success("Text converted");
   }
 
   async function handleCopy() {
     if (!output) {
-      setMessage("Enter some text and choose a case first.");
+      toast.error("Enter some text and choose a case first.");
       return;
     }
 
     try {
       await navigator.clipboard.writeText(output);
-      setMessage("Converted text copied!");
+      toast.success("Converted text copied");
     } catch {
-      setMessage("Copy failed. Please select and copy the output.");
+      toast.error("Copy failed. Please select and copy the output.");
     }
   }
 
   function handleClear() {
     setInput("");
     setOutput("");
-    setMessage("");
   }
 
   return (
@@ -104,7 +108,6 @@ export default function CaseConverter() {
           onChange={(event) => {
             setInput(event.target.value);
             setOutput("");
-            setMessage("");
           }}
           rows={7}
           placeholder="Paste or type your text here..."
@@ -159,10 +162,6 @@ export default function CaseConverter() {
           placeholder="Your converted text will appear here..."
           className="w-full resize-y rounded-xl border border-[var(--border)] bg-[var(--background)] p-4 leading-7 text-[var(--foreground)]"
         />
-
-        <p aria-live="polite" className="mt-3 text-sm text-[var(--muted)]">
-          {message}
-        </p>
       </section>
 
       <p className="text-sm leading-6 text-[var(--muted)]">
