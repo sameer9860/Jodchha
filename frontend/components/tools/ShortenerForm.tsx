@@ -1,6 +1,7 @@
 "use client";
 
 import { FormEvent, useState } from "react";
+import { toast } from "sonner";
 
 import {
   createShortLink,
@@ -25,8 +26,11 @@ export default function ShortenerForm() {
     try {
       const result = await createShortLink(url.trim());
       setShortUrl(getShortLinkUrl(result.code));
+      toast.success("Short link created");
     } catch {
-      setError("Unable to create the short link. Please try again.");
+      const message = "Unable to create the short link. Please try again.";
+      setError(message);
+      toast.error(message);
     } finally {
       setLoading(false);
     }
@@ -37,8 +41,13 @@ export default function ShortenerForm() {
       return;
     }
 
-    await navigator.clipboard.writeText(shortUrl);
-    setCopied(true);
+    try {
+      await navigator.clipboard.writeText(shortUrl);
+      setCopied(true);
+      toast.success("Link copied");
+    } catch {
+      toast.error("Unable to copy. Please select and copy the link.");
+    }
   }
 
   return (
