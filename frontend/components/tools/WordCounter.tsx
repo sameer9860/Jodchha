@@ -1,10 +1,10 @@
 "use client";
 
 import { useState } from "react";
+import { toast } from "sonner";
 
 export default function WordCounter() {
   const [text, setText] = useState("");
-  const [copyMessage, setCopyMessage] = useState("");
 
   const trimmedText = text.trim();
   const words = trimmedText ? trimmedText.split(/\s+/).length : 0;
@@ -21,21 +21,20 @@ export default function WordCounter() {
 
   async function handleCopy() {
     if (!text) {
-      setCopyMessage("Enter some text first.");
+      toast.error("Enter some text first.");
       return;
     }
 
     try {
       await navigator.clipboard.writeText(text);
-      setCopyMessage("Text copied!");
+      toast.success("Text copied");
     } catch {
-      setCopyMessage("Unable to copy. Please select and copy the text.");
+      toast.error("Unable to copy. Please select and copy the text.");
     }
   }
 
   function handleClear() {
     setText("");
-    setCopyMessage("");
   }
 
   const stats = [
@@ -65,7 +64,6 @@ export default function WordCounter() {
           value={text}
           onChange={(event) => {
             setText(event.target.value);
-            setCopyMessage("");
           }}
           placeholder="Start typing or paste your text here..."
           rows={12}
@@ -73,8 +71,8 @@ export default function WordCounter() {
         />
 
         <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
-          <p aria-live="polite" className="text-sm text-[var(--muted)]">
-            {copyMessage || "Your statistics update as you type."}
+          <p className="text-sm text-[var(--muted)]">
+            Your statistics update as you type.
           </p>
 
           <div className="flex gap-3">
