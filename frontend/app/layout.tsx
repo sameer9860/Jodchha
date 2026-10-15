@@ -1,4 +1,6 @@
 import type { Metadata } from "next";
+
+import AppProviders from "@/components/providers/AppProviders";
 import "./globals.css";
 
 const siteUrl = "https://jodchha.com.np";
@@ -72,7 +74,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      <body>
+        <AppProviders>{children}</AppProviders>
+      </body>
     </html>
   );
 }
