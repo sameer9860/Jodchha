@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { toast } from "sonner";
 
 function generateSecurePassword(
   length: number,
@@ -45,7 +46,6 @@ export default function PasswordGenerator() {
   const [symbols, setSymbols] = useState(false);
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
-  const [message, setMessage] = useState("");
 
   function handleGenerate() {
     let characters = "";
@@ -56,33 +56,37 @@ export default function PasswordGenerator() {
     if (symbols) characters += "!@#$%^&*()-_=+[]{};:,.?";
 
     setError("");
-    setMessage("");
 
     if (!characters) {
+      const message = "Select at least one character type.";
       setPassword("");
-      setError("Select at least one character type.");
+      setError(message);
+      toast.error(message);
       return;
     }
 
     try {
       setPassword(generateSecurePassword(length, characters));
+      toast.success("Password generated");
     } catch {
+      const message = "Unable to generate a secure password in this browser.";
       setPassword("");
-      setError("Unable to generate a secure password in this browser.");
+      setError(message);
+      toast.error(message);
     }
   }
 
   async function handleCopy() {
     if (!password) {
-      setMessage("Generate a password first.");
+      toast.error("Generate a password first.");
       return;
     }
 
     try {
       await navigator.clipboard.writeText(password);
-      setMessage("Password copied to clipboard.");
+      toast.success("Password copied");
     } catch {
-      setMessage("Copy failed. Please select and copy the password manually.");
+      toast.error("Copy failed. Please select and copy the password manually.");
     }
   }
 
@@ -207,10 +211,6 @@ export default function PasswordGenerator() {
             {error}
           </p>
         )}
-
-        <p aria-live="polite" className="mt-3 text-sm text-[var(--muted)]">
-          {message}
-        </p>
 
         <p className="mt-4 text-sm leading-6 text-[var(--muted)]">
           Passwords are generated in your browser. Jodchha does not upload or
