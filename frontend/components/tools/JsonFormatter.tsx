@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { toast } from "sonner";
 
 type FormatMode = "pretty" | "minify";
 
@@ -9,15 +10,15 @@ export default function JsonFormatter() {
   const [output, setOutput] = useState("");
   const [error, setError] = useState("");
   const [mode, setMode] = useState<FormatMode>("pretty");
-  const [copyMessage, setCopyMessage] = useState("");
 
   function processJson(nextMode: FormatMode = mode) {
     setError("");
     setOutput("");
-    setCopyMessage("");
 
     if (!input.trim()) {
-      setError("Please enter some JSON to format.");
+      const message = "Please enter some JSON to format.";
+      setError(message);
+      toast.error(message);
       return;
     }
 
@@ -30,12 +31,16 @@ export default function JsonFormatter() {
 
       setMode(nextMode);
       setOutput(result);
+      toast.success(
+        nextMode === "pretty" ? "JSON formatted" : "JSON minified",
+      );
     } catch (err) {
-      setError(
+      const message =
         err instanceof Error
           ? `Invalid JSON: ${err.message}`
-          : "Invalid JSON. Please check your input.",
-      );
+          : "Invalid JSON. Please check your input.";
+      setError(message);
+      toast.error(message);
     }
   }
 
@@ -44,9 +49,9 @@ export default function JsonFormatter() {
 
     try {
       await navigator.clipboard.writeText(output);
-      setCopyMessage("Formatted JSON copied!");
+      toast.success("Formatted JSON copied");
     } catch {
-      setCopyMessage("Copy failed. Please select and copy the output manually.");
+      toast.error("Copy failed. Please select and copy the output manually.");
     }
   }
 
@@ -54,7 +59,6 @@ export default function JsonFormatter() {
     setInput("");
     setOutput("");
     setError("");
-    setCopyMessage("");
   }
 
   return (
@@ -75,7 +79,6 @@ export default function JsonFormatter() {
               setInput(event.target.value);
               setError("");
               setOutput("");
-              setCopyMessage("");
             }}
             placeholder={'Paste JSON here, e.g. {"name":"Jodchha"}'}
             spellCheck={false}
@@ -136,10 +139,6 @@ export default function JsonFormatter() {
               {output || "Your formatted JSON will appear here."}
             </pre>
           )}
-
-          <p aria-live="polite" className="mt-3 text-sm text-[var(--muted)]">
-            {copyMessage}
-          </p>
         </section>
       </div>
 
