@@ -1,6 +1,7 @@
 "use client";
 
 import { ChangeEvent, DragEvent, useEffect, useRef, useState } from "react";
+import { toast } from "sonner";
 
 const validTypes = ["image/png", "image/jpeg", "image/webp"] as const;
 const maxFileSize = 10 * 1024 * 1024;
@@ -89,13 +90,19 @@ export default function BackgroundRemover() {
 
     if (!validTypes.includes(file.type as (typeof validTypes)[number])) {
       resetPreviewState();
-      setError("Unsupported file type. Please upload a PNG, JPEG, or WebP image.");
+      const message =
+        "Unsupported file type. Please upload a PNG, JPEG, or WebP image.";
+      setError(message);
+      toast.error(message);
       return;
     }
 
     if (file.size > maxFileSize) {
       resetPreviewState();
-      setError("File is too large. Please upload an image smaller than 10 MB.");
+      const message =
+        "File is too large. Please upload an image smaller than 10 MB.";
+      setError(message);
+      toast.error(message);
       return;
     }
 
@@ -128,9 +135,14 @@ export default function BackgroundRemover() {
     handleFileSelection(file);
   }
 
-  function processBackgroundRemoval(activeTolerance = tolerance) {
+  function processBackgroundRemoval(
+    activeTolerance = tolerance,
+    notifySuccess = true,
+  ) {
     if (!selectedFile || !originalUrl) {
-      setError("Please upload an image before removing the background.");
+      const message = "Please upload an image before removing the background.";
+      setError(message);
+      toast.error(message);
       return;
     }
 
@@ -147,7 +159,10 @@ export default function BackgroundRemover() {
       const context = canvas.getContext("2d");
 
       if (!context) {
-        setError("This browser could not process the image. Please try again.");
+        const message =
+          "This browser could not process the image. Please try again.";
+        setError(message);
+        toast.error(message);
         setIsProcessing(false);
         return;
       }
@@ -179,7 +194,10 @@ export default function BackgroundRemover() {
       canvas.toBlob(
         (blob) => {
           if (!blob) {
-            setError("Background removal failed. Please try another image.");
+            const message =
+              "Background removal failed. Please try another image.";
+            setError(message);
+            toast.error(message);
             setIsProcessing(false);
             return;
           }
@@ -190,6 +208,9 @@ export default function BackgroundRemover() {
 
           setProcessedUrl(URL.createObjectURL(blob));
           setIsProcessing(false);
+          if (notifySuccess) {
+            toast.success("Background removed");
+          }
         },
         "image/png",
         1,
@@ -197,7 +218,9 @@ export default function BackgroundRemover() {
     };
 
     image.onerror = () => {
-      setError("Could not read this image. Please try a different file.");
+      const message = "Could not read this image. Please try a different file.";
+      setError(message);
+      toast.error(message);
       setIsProcessing(false);
     };
 
@@ -209,7 +232,7 @@ export default function BackgroundRemover() {
     setTolerance(nextTolerance);
 
     if (selectedFile && originalUrl) {
-      processBackgroundRemoval(nextTolerance);
+      processBackgroundRemoval(nextTolerance, false);
     }
   }
 
@@ -223,6 +246,7 @@ export default function BackgroundRemover() {
     link.href = processedUrl;
     link.download = `${baseName}-bg-removed.png`;
     link.click();
+    toast.success("Download started");
   }
 
   return (
