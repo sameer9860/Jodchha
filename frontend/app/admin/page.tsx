@@ -8,6 +8,7 @@ import type { AnalyticsDashboard } from "@/lib/types";
 
 import DailyClicksChart from "@/components/admin/DailyClicksChart";
 import CategoryClicksChart from "@/components/admin/CategoryClicksChart";
+import { AdminDashboardSkeleton } from "@/components/ui/Skeleton";
 
 const summaryCards = [
   { key: "total_clicks", label: "Clicks in Range" },
@@ -267,11 +268,7 @@ export default function AdminDashboardPage() {
   }
 
   if (loading) {
-    return (
-      <main className="flex min-h-screen items-center justify-center bg-slate-100">
-        <p className="text-sm text-slate-500">Loading dashboard...</p>
-      </main>
-    );
+    return <AdminDashboardSkeleton />;
   }
 
   if (error || !data) {
