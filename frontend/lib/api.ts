@@ -1,4 +1,8 @@
 import type {
+  AdminCategory,
+  AdminClick,
+  AdminShortLink,
+  AdminWebsite,
   AnalyticsDashboard,
   AuthTokens,
   Category,
@@ -119,10 +123,7 @@ export function getShortLinkUrl(code: string): string {
 
 async function readErrorDetail(response: Response, fallback: string) {
   try {
-    const payload = (await response.json()) as {
-      detail?: string | string[] | Record<string, string[]>;
-      non_field_errors?: string[];
-    };
+    const payload = (await response.json()) as Record<string, unknown>;
 
     if (typeof payload.detail === "string") {
       return payload.detail;
@@ -136,14 +137,59 @@ async function readErrorDetail(response: Response, fallback: string) {
       return payload.non_field_errors.join(" ");
     }
 
+    const fieldErrors = Object.entries(payload)
+      .filter(([key]) => key !== "detail" && key !== "non_field_errors")
+      .flatMap(([key, value]) => {
+        if (Array.isArray(value)) {
+          return value.map((item) => `${key}: ${String(item)}`);
+        }
+        if (typeof value === "string") {
+          return [`${key}: ${value}`];
+        }
+        return [];
+      });
+
+    if (fieldErrors.length > 0) {
+      return fieldErrors.join(" ");
+    }
+
     if (payload.detail && typeof payload.detail === "object") {
-      return Object.values(payload.detail).flat().join(" ");
+      return Object.values(payload.detail as Record<string, string[]>)
+        .flat()
+        .join(" ");
     }
   } catch {
     // Ignore JSON parse failures and use the fallback message.
   }
 
   return fallback;
+}
+
+function clearAdminSession() {
+  sessionStorage.removeItem("jodchha_access_token");
+  sessionStorage.removeItem("jodchha_refresh_token");
+  sessionStorage.removeItem("jodchha_admin_username");
+}
+
+async function throwIfNotOk(response: Response, fallback: string) {
+  if (response.ok) {
+    return;
+  }
+
+  if (response.status === 401) {
+    clearAdminSession();
+    throw new ApiError("Session expired. Please sign in again.", 401);
+  }
+
+  if (response.status === 403) {
+    throw new ApiError(
+      "Admin access required. Sign in with a staff account.",
+      403,
+    );
+  }
+
+  const detail = await readErrorDetail(response, fallback);
+  throw new ApiError(detail, response.status);
 }
 
 export async function loginAdmin(
@@ -192,7 +238,10 @@ export async function refreshAccessToken(
   return response.json();
 }
 
-async function authenticatedFetch(endpoint: string): Promise<Response> {
+async function authenticatedFetch(
+  endpoint: string,
+  options: RequestInit = {},
+): Promise<Response> {
   const accessToken = sessionStorage.getItem("jodchha_access_token");
   const refreshToken = sessionStorage.getItem("jodchha_refresh_token");
 
@@ -200,13 +249,23 @@ async function authenticatedFetch(endpoint: string): Promise<Response> {
     throw new ApiError("Authentication required", 401);
   }
 
-  const request = (token: string) =>
-    fetch(`${API_URL}${endpoint}`, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
+  const headers = new Headers(options.headers);
+  headers.set("Authorization", `Bearer ${accessToken}`);
+
+  if (options.body && !headers.has("Content-Type")) {
+    headers.set("Content-Type", "application/json");
+  }
+
+  const request = (token: string) => {
+    const nextHeaders = new Headers(headers);
+    nextHeaders.set("Authorization", `Bearer ${token}`);
+
+    return fetch(`${API_URL}${endpoint}`, {
+      ...options,
+      headers: nextHeaders,
       cache: "no-store",
     });
+  };
 
   let response = await request(accessToken);
 
@@ -226,9 +285,7 @@ async function authenticatedFetch(endpoint: string): Promise<Response> {
     response = await request(tokens.access);
     return response;
   } catch {
-    sessionStorage.removeItem("jodchha_access_token");
-    sessionStorage.removeItem("jodchha_refresh_token");
-    sessionStorage.removeItem("jodchha_admin_username");
+    clearAdminSession();
     throw new ApiError("Session expired. Please sign in again.", 401);
   }
 }
@@ -253,28 +310,183 @@ export async function getAnalyticsDashboard(
     : "/analytics/";
 
   const response = await authenticatedFetch(endpoint);
-
-  if (!response.ok) {
-    if (response.status === 401) {
-      sessionStorage.removeItem("jodchha_access_token");
-      sessionStorage.removeItem("jodchha_refresh_token");
-      sessionStorage.removeItem("jodchha_admin_username");
-      throw new ApiError("Session expired. Please sign in again.", 401);
-    }
-
-    if (response.status === 403) {
-      throw new ApiError(
-        "Admin access required. Sign in with a staff account.",
-        403,
-      );
-    }
-
-    const detail = await readErrorDetail(
-      response,
-      "Failed to fetch analytics",
-    );
-    throw new ApiError(detail, response.status);
-  }
-
+  await throwIfNotOk(response, "Failed to fetch analytics");
   return response.json();
+}
+
+export type AdminCategoryInput = {
+  name: string;
+  slug?: string;
+  description?: string;
+  icon?: string;
+  is_active?: boolean;
+};
+
+export type AdminWebsiteInput = {
+  category: number;
+  name: string;
+  slug?: string;
+  description: string;
+  url: string;
+  logo?: string;
+  is_featured?: boolean;
+  is_active?: boolean;
+};
+
+export type AdminShortLinkInput = {
+  code?: string;
+  destination_url: string;
+  is_active?: boolean;
+  expires_at?: string | null;
+};
+
+export async function adminListCategories(params?: {
+  search?: string;
+  is_active?: string;
+}): Promise<AdminCategory[]> {
+  const query = new URLSearchParams();
+  if (params?.search) query.set("search", params.search);
+  if (params?.is_active) query.set("is_active", params.is_active);
+  const suffix = query.toString() ? `?${query}` : "";
+  const response = await authenticatedFetch(`/admin/categories/${suffix}`);
+  await throwIfNotOk(response, "Failed to load categories");
+  return response.json();
+}
+
+export async function adminCreateCategory(
+  data: AdminCategoryInput,
+): Promise<AdminCategory> {
+  const response = await authenticatedFetch("/admin/categories/", {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+  await throwIfNotOk(response, "Failed to create category");
+  return response.json();
+}
+
+export async function adminUpdateCategory(
+  id: number,
+  data: Partial<AdminCategoryInput>,
+): Promise<AdminCategory> {
+  const response = await authenticatedFetch(`/admin/categories/${id}/`, {
+    method: "PATCH",
+    body: JSON.stringify(data),
+  });
+  await throwIfNotOk(response, "Failed to update category");
+  return response.json();
+}
+
+export async function adminDeleteCategory(id: number): Promise<void> {
+  const response = await authenticatedFetch(`/admin/categories/${id}/`, {
+    method: "DELETE",
+  });
+  await throwIfNotOk(response, "Failed to delete category");
+}
+
+export async function adminListWebsites(params?: {
+  search?: string;
+  category?: string;
+  is_active?: string;
+  is_featured?: string;
+}): Promise<AdminWebsite[]> {
+  const query = new URLSearchParams();
+  if (params?.search) query.set("search", params.search);
+  if (params?.category) query.set("category", params.category);
+  if (params?.is_active) query.set("is_active", params.is_active);
+  if (params?.is_featured) query.set("is_featured", params.is_featured);
+  const suffix = query.toString() ? `?${query}` : "";
+  const response = await authenticatedFetch(`/admin/websites/${suffix}`);
+  await throwIfNotOk(response, "Failed to load websites");
+  return response.json();
+}
+
+export async function adminCreateWebsite(
+  data: AdminWebsiteInput,
+): Promise<AdminWebsite> {
+  const response = await authenticatedFetch("/admin/websites/", {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+  await throwIfNotOk(response, "Failed to create website");
+  return response.json();
+}
+
+export async function adminUpdateWebsite(
+  id: number,
+  data: Partial<AdminWebsiteInput>,
+): Promise<AdminWebsite> {
+  const response = await authenticatedFetch(`/admin/websites/${id}/`, {
+    method: "PATCH",
+    body: JSON.stringify(data),
+  });
+  await throwIfNotOk(response, "Failed to update website");
+  return response.json();
+}
+
+export async function adminDeleteWebsite(id: number): Promise<void> {
+  const response = await authenticatedFetch(`/admin/websites/${id}/`, {
+    method: "DELETE",
+  });
+  await throwIfNotOk(response, "Failed to delete website");
+}
+
+export async function adminListShortLinks(params?: {
+  search?: string;
+  is_active?: string;
+}): Promise<AdminShortLink[]> {
+  const query = new URLSearchParams();
+  if (params?.search) query.set("search", params.search);
+  if (params?.is_active) query.set("is_active", params.is_active);
+  const suffix = query.toString() ? `?${query}` : "";
+  const response = await authenticatedFetch(`/admin/shortlinks/${suffix}`);
+  await throwIfNotOk(response, "Failed to load short links");
+  return response.json();
+}
+
+export async function adminCreateShortLink(
+  data: AdminShortLinkInput,
+): Promise<AdminShortLink> {
+  const response = await authenticatedFetch("/admin/shortlinks/", {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+  await throwIfNotOk(response, "Failed to create short link");
+  return response.json();
+}
+
+export async function adminUpdateShortLink(
+  id: number,
+  data: Partial<AdminShortLinkInput>,
+): Promise<AdminShortLink> {
+  const response = await authenticatedFetch(`/admin/shortlinks/${id}/`, {
+    method: "PATCH",
+    body: JSON.stringify(data),
+  });
+  await throwIfNotOk(response, "Failed to update short link");
+  return response.json();
+}
+
+export async function adminDeleteShortLink(id: number): Promise<void> {
+  const response = await authenticatedFetch(`/admin/shortlinks/${id}/`, {
+    method: "DELETE",
+  });
+  await throwIfNotOk(response, "Failed to delete short link");
+}
+
+export async function adminListClicks(params?: {
+  search?: string;
+}): Promise<AdminClick[]> {
+  const query = new URLSearchParams();
+  if (params?.search) query.set("search", params.search);
+  const suffix = query.toString() ? `?${query}` : "";
+  const response = await authenticatedFetch(`/admin/clicks/${suffix}`);
+  await throwIfNotOk(response, "Failed to load clicks");
+  return response.json();
+}
+
+export async function adminDeleteClick(id: number): Promise<void> {
+  const response = await authenticatedFetch(`/admin/clicks/${id}/`, {
+    method: "DELETE",
+  });
+  await throwIfNotOk(response, "Failed to delete click");
 }
