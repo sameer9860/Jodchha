@@ -6,10 +6,16 @@ export type Category = {
   icon: string;
 };
 
+export type AdminCategory = Category & {
+  is_active: boolean;
+  created_at: string;
+};
+
 export type DailyClick = {
   date: string;
   clicks: number;
 };
+
 export type Website = {
   id: number;
   name: string;
@@ -19,6 +25,48 @@ export type Website = {
   logo: string;
   category: Category;
   is_featured: boolean;
+};
+
+export type AdminWebsite = {
+  id: number;
+  category: number;
+  category_detail: {
+    id: number;
+    name: string;
+    slug: string;
+    icon: string;
+  };
+  name: string;
+  slug: string;
+  description: string;
+  url: string;
+  logo: string;
+  is_featured: boolean;
+  is_active: boolean;
+  click_count: number;
+  created_at: string;
+  updated_at: string;
+};
+
+export type AdminShortLink = {
+  id: number;
+  code: string;
+  destination_url: string;
+  click_count: number;
+  is_active: boolean;
+  created_at: string;
+  expires_at: string | null;
+};
+
+export type AdminClick = {
+  id: number;
+  website: number | null;
+  website_name: string | null;
+  short_link: number | null;
+  short_link_code: string | null;
+  referrer: string;
+  user_agent: string;
+  created_at: string;
 };
 
 export type AnalyticsSummary = {
