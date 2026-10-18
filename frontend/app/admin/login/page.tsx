@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 
 import { ApiError, loginAdmin } from "@/lib/api";
 
+
+
 export default function AdminLoginPage() {
   const router = useRouter();
 
@@ -12,6 +14,7 @@ export default function AdminLoginPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [nextPath, setNextPath] = useState("/admin");
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -29,7 +32,7 @@ export default function AdminLoginPage() {
         tokens.username ?? username,
       );
 
-      router.push("/admin");
+      router.push(nextPath);
     } catch (err) {
       if (err instanceof ApiError) {
         setError(err.message);
@@ -42,7 +45,7 @@ export default function AdminLoginPage() {
   }
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-[var(--background)] px-6">
+    <main className="flex min-h-screen items-center justify-center bg-[var(--background)] px-6 py-10">
       <div className="w-full max-w-md rounded-2xl border border-[var(--border)] bg-[var(--white)] p-8 shadow-sm">
         <div className="mb-8">
           <p className="text-sm font-semibold uppercase tracking-wider text-[var(--primary)]">
@@ -54,7 +57,7 @@ export default function AdminLoginPage() {
           </h1>
 
           <p className="mt-2 text-sm text-[var(--muted)]">
-            Sign in with a staff account to access analytics.
+            Sign in to add categories and websites, or open analytics.
           </p>
         </div>
 
@@ -97,6 +100,7 @@ export default function AdminLoginPage() {
             />
           </div>
 
+        
           {error && (
             <p className="rounded-lg bg-red-50 px-4 py-3 text-sm font-medium text-red-600">
               {error}
