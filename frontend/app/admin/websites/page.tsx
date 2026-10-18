@@ -1,7 +1,7 @@
 "use client";
 
-import { FormEvent, useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { FormEvent, Suspense, useEffect, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 
 import AdminShell from "@/components/admin/AdminShell";
 import {
@@ -26,7 +26,16 @@ const emptyForm = {
 };
 
 export default function AdminWebsitesPage() {
+  return (
+    <Suspense fallback={<p className="p-8 text-sm text-slate-500">Loading websites...</p>}>
+      <AdminWebsitesPageContent />
+    </Suspense>
+  );
+}
+
+function AdminWebsitesPageContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [items, setItems] = useState<AdminWebsite[]>([]);
   const [categories, setCategories] = useState<AdminCategory[]>([]);
   const [loading, setLoading] = useState(true);
@@ -74,6 +83,16 @@ export default function AdminWebsitesPage() {
     void loadItems();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [router]);
+
+  useEffect(() => {
+    if (searchParams.get("new") !== "1" || loading) {
+      return;
+    }
+
+    openCreate();
+    router.replace("/admin/websites", { scroll: false });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams, loading, categories]);
 
   function openCreate() {
     setEditing(null);
