@@ -290,6 +290,37 @@ export default function AdminDashboardPage() {
       }
     >
       <div className="space-y-8">
+        <section className="grid gap-4 sm:grid-cols-2">
+          <a
+            href="/admin/categories?new=1"
+            className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition hover:border-cyan-300 hover:shadow-md"
+          >
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-cyan-600">
+              Content
+            </p>
+            <h2 className="mt-2 text-lg font-semibold text-slate-900">
+              Add Category
+            </h2>
+            <p className="mt-1 text-sm text-slate-500">
+              Create a new category for the public directory.
+            </p>
+          </a>
+          <a
+            href="/admin/websites?new=1"
+            className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition hover:border-cyan-300 hover:shadow-md"
+          >
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-cyan-600">
+              Content
+            </p>
+            <h2 className="mt-2 text-lg font-semibold text-slate-900">
+              Add Website
+            </h2>
+            <p className="mt-1 text-sm text-slate-500">
+              Publish a website listing under a category.
+            </p>
+          </a>
+        </section>
+
         <section
           id="date-filters"
           className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm"
