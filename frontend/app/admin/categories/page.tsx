@@ -1,7 +1,7 @@
 "use client";
 
-import { FormEvent, useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { FormEvent, Suspense, useEffect, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 
 import AdminShell from "@/components/admin/AdminShell";
 import {
@@ -22,7 +22,16 @@ const emptyForm = {
 };
 
 export default function AdminCategoriesPage() {
+  return (
+    <Suspense fallback={<p className="p-8 text-sm text-slate-500">Loading categories...</p>}>
+      <AdminCategoriesPageContent />
+    </Suspense>
+  );
+}
+
+function AdminCategoriesPageContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [items, setItems] = useState<AdminCategory[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -63,6 +72,14 @@ export default function AdminCategoriesPage() {
     void loadItems();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [router]);
+
+  useEffect(() => {
+    if (searchParams.get("new") === "1") {
+      openCreate();
+      router.replace("/admin/categories", { scroll: false });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
 
   function openCreate() {
     setEditing(null);
