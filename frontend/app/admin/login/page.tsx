@@ -2,6 +2,7 @@
 
 import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
+import { Eye, EyeOff } from "lucide-react";
 
 import { ApiError, loginAdmin } from "@/lib/api";
 
@@ -12,6 +13,7 @@ export default function AdminLoginPage() {
 
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [nextPath, setNextPath] = useState("/admin");
@@ -62,42 +64,55 @@ export default function AdminLoginPage() {
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-5">
-          <div>
-            <label
-              htmlFor="username"
-              className="text-sm font-semibold text-[var(--foreground)]"
-            >
-              Username
-            </label>
-
+          <div className="relative">
             <input
               id="username"
               type="text"
+              placeholder=" "
               value={username}
               onChange={(event) => setUsername(event.target.value)}
               required
               autoComplete="username"
-              className="mt-2 h-12 w-full rounded-lg border border-[var(--border)] px-4 text-[var(--foreground)] outline-none transition placeholder:text-[var(--muted)] focus:border-[var(--primary)] focus:ring-2 focus:ring-blue-100"
+              className="peer h-12 w-full rounded-lg border border-[var(--border)] bg-transparent px-4 text-[var(--foreground)] outline-none transition placeholder:text-transparent focus:border-[var(--primary)] focus:ring-2 focus:ring-blue-100"
             />
+            <label
+              htmlFor="username"
+              className="pointer-events-none absolute left-4 top-0 -translate-y-1/2 bg-[var(--white)] px-1 text-xs font-medium text-[var(--primary)] transition-all peer-placeholder-shown:top-1/2 peer-placeholder-shown:text-base peer-placeholder-shown:text-[var(--muted)] peer-focus:top-0 peer-focus:text-xs peer-focus:text-[var(--primary)]"
+            >
+              Username
+            </label>
           </div>
 
-          <div>
-            <label
-              htmlFor="password"
-              className="text-sm font-semibold text-[var(--foreground)]"
-            >
-              Password
-            </label>
-
+          <div className="relative">
             <input
               id="password"
-              type="password"
+              type={showPassword ? "text" : "password"}
+              placeholder=" "
               value={password}
               onChange={(event) => setPassword(event.target.value)}
               required
               autoComplete="current-password"
-              className="mt-2 h-12 w-full rounded-lg border border-[var(--border)] px-4 text-[var(--foreground)] outline-none transition placeholder:text-[var(--muted)] focus:border-[var(--primary)] focus:ring-2 focus:ring-blue-100"
+              className="peer h-12 w-full rounded-lg border border-[var(--border)] bg-transparent py-2 pl-4 pr-12 text-[var(--foreground)] outline-none transition placeholder:text-transparent focus:border-[var(--primary)] focus:ring-2 focus:ring-blue-100"
             />
+            <label
+              htmlFor="password"
+              className="pointer-events-none absolute left-4 top-0 -translate-y-1/2 bg-[var(--white)] px-1 text-xs font-medium text-[var(--primary)] transition-all peer-placeholder-shown:top-1/2 peer-placeholder-shown:text-base peer-placeholder-shown:text-[var(--muted)] peer-focus:top-0 peer-focus:text-xs peer-focus:text-[var(--primary)]"
+            >
+              Password
+            </label>
+            <button
+              type="button"
+              onClick={() => setShowPassword((visible) => !visible)}
+              aria-label={showPassword ? "Hide password" : "Show password"}
+              aria-pressed={showPassword}
+              className="absolute right-3 top-1/2 -translate-y-1/2 rounded p-1 text-[var(--muted)] transition hover:text-[var(--foreground)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--primary)]"
+            >
+              {showPassword ? (
+                <Eye aria-hidden="true" size={18} />
+              ) : (
+                <EyeOff aria-hidden="true" size={18} />
+              )}
+            </button>
           </div>
 
         
