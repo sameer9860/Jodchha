@@ -109,8 +109,53 @@ export default function AdminDashboardPage() {
   }
 
   useEffect(() => {
-    void loadDashboard({ showLoading: true });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    let cancelled = false;
+
+    async function loadInitialDashboard() {
+      const accessToken = sessionStorage.getItem("jodchha_access_token");
+
+      if (!accessToken) {
+        router.replace("/admin/login");
+        return;
+      }
+
+      try {
+        const result = await getAnalyticsDashboard();
+
+        if (cancelled) return;
+
+        setData(result);
+        setAppliedStartDate(result.start_date);
+        setAppliedEndDate(result.end_date);
+        setDraftStartDate(result.start_date);
+        setDraftEndDate(result.end_date);
+      } catch (err) {
+        if (cancelled) return;
+
+        const message =
+          err instanceof ApiError
+            ? err.message
+            : "Unable to load analytics. Please try again or sign in again.";
+
+        setError(message);
+
+        if (err instanceof ApiError && (err.status === 401 || err.status === 403)) {
+          sessionStorage.removeItem("jodchha_access_token");
+          sessionStorage.removeItem("jodchha_refresh_token");
+          sessionStorage.removeItem("jodchha_admin_username");
+        }
+      } finally {
+        if (!cancelled) {
+          setLoading(false);
+        }
+      }
+    }
+
+    void loadInitialDashboard();
+
+    return () => {
+      cancelled = true;
+    };
   }, [router]);
 
   function applyDateFilters() {
