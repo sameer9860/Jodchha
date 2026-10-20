@@ -121,7 +121,7 @@ export default function AdminClicksPage() {
               <table className="w-full min-w-[900px] text-left text-sm">
                 <thead className="border-b border-slate-200 bg-slate-50 text-slate-500">
                   <tr>
-                    <th className="px-4 py-3 font-medium">ID</th>
+                    <th className="px-4 py-3 font-medium">S.N</th>
                     <th className="px-4 py-3 font-medium">Type</th>
                     <th className="px-4 py-3 font-medium">Destination</th>
                     <th className="px-4 py-3 font-medium">Referrer</th>
@@ -130,9 +130,11 @@ export default function AdminClicksPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {items.map((item) => (
+                  {items.map((item, index) => (
                     <tr key={item.id} className="border-b border-slate-100 last:border-0">
-                      <td className="px-4 py-4 text-slate-500">#{item.id}</td>
+                      <td className="px-4 py-4 tabular-nums text-slate-500">
+                        {index + 1}
+                      </td>
                       <td className="px-4 py-4 text-slate-700">
                         {item.website ? "Website" : "Short Link"}
                       </td>
