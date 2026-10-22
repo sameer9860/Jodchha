@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useState } from "react";
 
 export default function Navbar() {
@@ -19,8 +20,16 @@ export default function Navbar() {
         <div className="flex h-16 items-center justify-between gap-4">
           <Link
             href="/"
-            className="text-xl font-bold tracking-tight text-[var(--foreground)]"
+            className="inline-flex items-center gap-2.5 text-xl font-bold tracking-tight text-[var(--foreground)]"
           >
+            <Image
+              src="/icon.svg"
+              alt=""
+              aria-hidden="true"
+              width={46}
+              height={36}
+              className="h-9 w-auto"
+            />
             Jodchha
           </Link>
 
