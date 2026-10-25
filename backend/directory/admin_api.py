@@ -5,6 +5,7 @@ from rest_framework.permissions import IsAdminUser
 from rest_framework.response import Response
 
 from .models import Category, Click, ShortLink, Website
+from .pagination import AdminPagination
 from .utils import generate_short_code
 
 
@@ -116,6 +117,7 @@ class AdminClickSerializer(serializers.ModelSerializer):
 class AdminCategoryListCreateView(generics.ListCreateAPIView):
     permission_classes = (IsAdminUser,)
     serializer_class = AdminCategorySerializer
+    pagination_class = AdminPagination
     queryset = Category.objects.all()
 
     def get_queryset(self):
@@ -157,6 +159,7 @@ class AdminCategoryDetailView(generics.RetrieveUpdateDestroyAPIView):
 class AdminWebsiteListCreateView(generics.ListCreateAPIView):
     permission_classes = (IsAdminUser,)
     serializer_class = AdminWebsiteSerializer
+    pagination_class = AdminPagination
 
     def get_queryset(self):
         queryset = Website.objects.select_related("category").all()
@@ -189,6 +192,7 @@ class AdminWebsiteDetailView(generics.RetrieveUpdateDestroyAPIView):
 class AdminShortLinkListCreateView(generics.ListCreateAPIView):
     permission_classes = (IsAdminUser,)
     serializer_class = AdminShortLinkSerializer
+    pagination_class = AdminPagination
 
     def get_queryset(self):
         queryset = ShortLink.objects.all()
@@ -215,6 +219,7 @@ class AdminShortLinkDetailView(generics.RetrieveUpdateDestroyAPIView):
 class AdminClickListView(generics.ListAPIView):
     permission_classes = (IsAdminUser,)
     serializer_class = AdminClickSerializer
+    pagination_class = AdminPagination
 
     def get_queryset(self):
         queryset = Click.objects.select_related("website", "short_link").all()
@@ -227,7 +232,7 @@ class AdminClickListView(generics.ListAPIView):
                 | Q(short_link__code__icontains=search)
             )
 
-        return queryset[:200]
+        return queryset
 
 
 class AdminClickDetailView(generics.RetrieveAPIView):
