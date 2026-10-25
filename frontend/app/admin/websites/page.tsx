@@ -3,6 +3,7 @@
 import { FormEvent, Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 
+import AdminPagination from "@/components/admin/AdminPagination";
 import AdminShell from "@/components/admin/AdminShell";
 import {
   ApiError,
@@ -13,6 +14,8 @@ import {
   adminUpdateWebsite,
 } from "@/lib/api";
 import type { AdminCategory, AdminWebsite } from "@/lib/types";
+
+const PAGE_SIZE = 20;
 
 const emptyForm = {
   category: "",
@@ -38,6 +41,8 @@ function AdminWebsitesPageContent() {
   const searchParams = useSearchParams();
   const [items, setItems] = useState<AdminWebsite[]>([]);
   const [categories, setCategories] = useState<AdminCategory[]>([]);
+  const [page, setPage] = useState(1);
+  const [count, setCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -47,7 +52,11 @@ function AdminWebsitesPageContent() {
   const [editing, setEditing] = useState<AdminWebsite | null>(null);
   const [form, setForm] = useState(emptyForm);
 
-  async function loadItems(nextSearch = search, nextCategory = categoryFilter) {
+  async function loadItems(
+    nextSearch = search,
+    nextCategory = categoryFilter,
+    nextPage = page,
+  ) {
     const accessToken = sessionStorage.getItem("jodchha_access_token");
     if (!accessToken) {
       router.replace("/admin/login");
@@ -62,11 +71,13 @@ function AdminWebsitesPageContent() {
         adminListWebsites({
           search: nextSearch || undefined,
           category: nextCategory || undefined,
+          page: nextPage,
         }),
-        adminListCategories(),
+        adminListCategories({ page_size: 100 }),
       ]);
-      setItems(websites);
-      setCategories(cats);
+      setItems(websites.results);
+      setCount(websites.count);
+      setCategories(cats.results);
     } catch (err) {
       setError(
         err instanceof ApiError ? err.message : "Unable to load websites.",
@@ -80,9 +91,9 @@ function AdminWebsitesPageContent() {
   }
 
   useEffect(() => {
-    void loadItems();
+    void loadItems(search, categoryFilter, page);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [router]);
+  }, [router, page]);
 
   useEffect(() => {
     if (searchParams.get("new") !== "1" || loading) {
@@ -209,7 +220,8 @@ function AdminWebsitesPageContent() {
           className="flex flex-col gap-3 lg:flex-row"
           onSubmit={(event) => {
             event.preventDefault();
-            void loadItems(search, categoryFilter);
+            setPage(1);
+            void loadItems(search, categoryFilter, 1);
           }}
         >
           <input
@@ -271,7 +283,7 @@ function AdminWebsitesPageContent() {
                   {items.map((item, index) => (
                     <tr key={item.id} className="border-b border-slate-100 last:border-0">
                       <td className="px-4 py-4 tabular-nums text-slate-500">
-                        {index + 1}
+                        {(page - 1) * PAGE_SIZE + index + 1}
                       </td>
                       <td className="px-4 py-4">
                         <div className="font-medium text-slate-900">{item.name}</div>
@@ -333,6 +345,12 @@ function AdminWebsitesPageContent() {
                   ))}
                 </tbody>
               </table>
+              <AdminPagination
+                page={page}
+                count={count}
+                pageSize={PAGE_SIZE}
+                onPageChange={setPage}
+              />
             </div>
           )}
         </div>
