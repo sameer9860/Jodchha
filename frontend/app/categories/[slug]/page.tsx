@@ -2,18 +2,22 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
+import PaginationNav from "@/components/directory/PaginationNav";
+import WebsiteCard from "@/components/directory/WebsiteCard";
+import SiteShell from "@/components/layout/SiteShell";
 import {
   ApiError,
   getCategories,
   getCategoryWebsites,
-  getWebsiteRedirectUrl,
 } from "@/lib/api";
-import SiteShell from "@/components/layout/SiteShell";
-import type { Category, Website } from "@/lib/types";
+import type { Category, Paginated, Website } from "@/lib/types";
 
 type CategoryPageProps = {
   params: Promise<{
     slug: string;
+  }>;
+  searchParams: Promise<{
+    page?: string;
   }>;
 };
 
@@ -57,17 +61,27 @@ export async function generateMetadata({
   }
 }
 
-export default async function CategoryPage({ params }: CategoryPageProps) {
+export default async function CategoryPage({
+  params,
+  searchParams,
+}: CategoryPageProps) {
   const { slug } = await params;
+  const query = await searchParams;
+  const page = Math.max(1, Number(query.page) || 1);
 
   let categories: Category[] = [];
-  let websites: Website[] = [];
+  let websites: Paginated<Website> = {
+    count: 0,
+    next: null,
+    previous: null,
+    results: [],
+  };
   let loadError = "";
 
   try {
     [categories, websites] = await Promise.all([
       getCategories(),
-      getCategoryWebsites(slug),
+      getCategoryWebsites(slug, page),
     ]);
   } catch (error) {
     loadError =
@@ -154,12 +168,12 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
               </p>
 
               <p className="mt-3 text-sm text-[var(--muted)]">
-                {websites.length}{" "}
-                {websites.length === 1 ? "website" : "websites"} available.
+                {websites.count}{" "}
+                {websites.count === 1 ? "website" : "websites"} available.
               </p>
             </div>
 
-            {websites.length === 0 ? (
+            {websites.results.length === 0 ? (
               <div className="mt-10 rounded-xl border border-[var(--border)] bg-[var(--white)] p-8 text-center">
                 <h2 className="text-xl font-semibold text-[var(--foreground)]">
                   No websites yet
@@ -170,47 +184,24 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
                 </p>
               </div>
             ) : (
-              <div className="mt-10 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-                {websites.map((website) => (
-                  <a
-                    key={website.id}
-                    href={getWebsiteRedirectUrl(website.slug)}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="group flex flex-col rounded-xl border border-[var(--border)] bg-[var(--white)] p-6 transition hover:-translate-y-1 hover:border-blue-200 hover:shadow-md"
-                  >
-                    <div className="flex items-start justify-between">
-                      <span
-                        className="flex h-12 w-12 items-center justify-center rounded-xl bg-slate-50 text-2xl"
-                        aria-hidden="true"
-                      >
-                        {website.category.icon || "🔗"}
-                      </span>
-
-                      {website.is_featured && (
-                        <span className="rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold text-[var(--primary)]">
-                          Featured
-                        </span>
-                      )}
-                    </div>
-
-                    <h2 className="mt-5 text-lg font-semibold text-[var(--foreground)]">
-                      {website.name}
-                    </h2>
-
-                    <p className="mt-2 flex-1 text-sm leading-6 text-[var(--muted)]">
-                      {website.description}
-                    </p>
-
-                    <span className="mt-6 inline-flex items-center font-semibold text-[var(--primary)] hover:text-[var(--primary-dark)]">
-                      Visit Website
-                      <span className="ml-2 transition group-hover:translate-x-1">
-                        →
-                      </span>
-                    </span>
-                  </a>
-                ))}
-              </div>
+              <>
+                <div className="mt-10 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                  {websites.results.map((website) => (
+                    <WebsiteCard
+                      key={website.id}
+                      website={website}
+                      badge={website.is_featured ? "Featured" : undefined}
+                    />
+                  ))}
+                </div>
+                <PaginationNav
+                  page={page}
+                  count={websites.count}
+                  hrefForPage={(nextPage) =>
+                    `/categories/${category.slug}?page=${nextPage}`
+                  }
+                />
+              </>
             )}
           </>
         )}
