@@ -25,6 +25,17 @@ export type Website = {
   logo: string;
   category: Category;
   is_featured: boolean;
+  is_active?: boolean;
+  click_count?: number;
+  created_at?: string;
+  updated_at?: string;
+};
+
+export type Paginated<T> = {
+  count: number;
+  next: string | null;
+  previous: string | null;
+  results: T[];
 };
 
 export type AdminWebsite = {
