@@ -6,6 +6,7 @@ import type {
   AnalyticsDashboard,
   AuthTokens,
   Category,
+  Paginated,
   Website,
 } from "./types";
 
@@ -45,6 +46,23 @@ export function getWebsiteRedirectUrl(slug: string): string {
   return `${API_URL}/go/${encodeURIComponent(slug)}/`;
 }
 
+export function getWebsitePageUrl(slug: string): string {
+  return `/websites/${encodeURIComponent(slug)}`;
+}
+
+function asPaginated<T>(data: Paginated<T> | T[]): Paginated<T> {
+  if (Array.isArray(data)) {
+    return {
+      count: data.length,
+      next: null,
+      previous: null,
+      results: data,
+    };
+  }
+
+  return data;
+}
+
 export async function getCategories(): Promise<Category[]> {
   return fetchJson<Category[]>(
     `${API_URL}/categories/`,
@@ -53,26 +71,89 @@ export async function getCategories(): Promise<Category[]> {
 }
 
 export async function getFeaturedWebsites(): Promise<Website[]> {
-  return fetchJson<Website[]>(
-    `${API_URL}/websites/?featured=true`,
+  const data = await fetchJson<Paginated<Website> | Website[]>(
+    `${API_URL}/websites/?featured=true&page_size=12`,
     "Failed to fetch featured websites",
   );
+
+  return asPaginated(data).results;
 }
 
-export async function getSearchResults(query: string): Promise<Website[]> {
-  return fetchJson<Website[]>(
-    `${API_URL}/websites/?search=${encodeURIComponent(query)}`,
+export async function getSearchResults(
+  query: string,
+  page = 1,
+): Promise<Paginated<Website>> {
+  const params = new URLSearchParams({
+    search: query,
+    page: String(page),
+  });
+
+  const data = await fetchJson<Paginated<Website> | Website[]>(
+    `${API_URL}/websites/?${params}`,
     "Failed to search websites",
   );
+
+  return asPaginated(data);
 }
 
 export async function getCategoryWebsites(
   category: string,
-): Promise<Website[]> {
-  return fetchJson<Website[]>(
-    `${API_URL}/websites/?category=${encodeURIComponent(category)}`,
+  page = 1,
+): Promise<Paginated<Website>> {
+  const params = new URLSearchParams({
+    category,
+    page: String(page),
+  });
+
+  const data = await fetchJson<Paginated<Website> | Website[]>(
+    `${API_URL}/websites/?${params}`,
     "Failed to fetch category websites",
   );
+
+  return asPaginated(data);
+}
+
+export async function getWebsite(slug: string): Promise<Website> {
+  return fetchJson<Website>(
+    `${API_URL}/websites/${encodeURIComponent(slug)}/`,
+    "Failed to fetch website",
+  );
+}
+
+export async function getRelatedWebsites(
+  slug: string,
+  category: string,
+): Promise<Website[]> {
+  const data = await getCategoryWebsites(category, 1);
+  return data.results.filter((website) => website.slug !== slug).slice(0, 3);
+}
+
+export async function getSitemapWebsites(): Promise<Website[]> {
+  const websites: Website[] = [];
+  let page = 1;
+
+  while (page <= 20) {
+    const params = new URLSearchParams({
+      page: String(page),
+      page_size: "50",
+    });
+    const data = asPaginated(
+      await fetchJson<Paginated<Website> | Website[]>(
+        `${API_URL}/websites/?${params}`,
+        "Failed to fetch websites",
+      ),
+    );
+
+    websites.push(...data.results);
+
+    if (!data.next) {
+      break;
+    }
+
+    page += 1;
+  }
+
+  return websites;
 }
 
 export type ShortLink = {
@@ -343,14 +424,18 @@ export type AdminShortLinkInput = {
 export async function adminListCategories(params?: {
   search?: string;
   is_active?: string;
-}): Promise<AdminCategory[]> {
+  page?: number;
+  page_size?: number;
+}): Promise<Paginated<AdminCategory>> {
   const query = new URLSearchParams();
   if (params?.search) query.set("search", params.search);
   if (params?.is_active) query.set("is_active", params.is_active);
+  if (params?.page) query.set("page", String(params.page));
+  if (params?.page_size) query.set("page_size", String(params.page_size));
   const suffix = query.toString() ? `?${query}` : "";
   const response = await authenticatedFetch(`/admin/categories/${suffix}`);
   await throwIfNotOk(response, "Failed to load categories");
-  return response.json();
+  return asPaginated(await response.json());
 }
 
 export async function adminCreateCategory(
@@ -388,16 +473,20 @@ export async function adminListWebsites(params?: {
   category?: string;
   is_active?: string;
   is_featured?: string;
-}): Promise<AdminWebsite[]> {
+  page?: number;
+  page_size?: number;
+}): Promise<Paginated<AdminWebsite>> {
   const query = new URLSearchParams();
   if (params?.search) query.set("search", params.search);
   if (params?.category) query.set("category", params.category);
   if (params?.is_active) query.set("is_active", params.is_active);
   if (params?.is_featured) query.set("is_featured", params.is_featured);
+  if (params?.page) query.set("page", String(params.page));
+  if (params?.page_size) query.set("page_size", String(params.page_size));
   const suffix = query.toString() ? `?${query}` : "";
   const response = await authenticatedFetch(`/admin/websites/${suffix}`);
   await throwIfNotOk(response, "Failed to load websites");
-  return response.json();
+  return asPaginated(await response.json());
 }
 
 export async function adminCreateWebsite(
@@ -433,14 +522,18 @@ export async function adminDeleteWebsite(id: number): Promise<void> {
 export async function adminListShortLinks(params?: {
   search?: string;
   is_active?: string;
-}): Promise<AdminShortLink[]> {
+  page?: number;
+  page_size?: number;
+}): Promise<Paginated<AdminShortLink>> {
   const query = new URLSearchParams();
   if (params?.search) query.set("search", params.search);
   if (params?.is_active) query.set("is_active", params.is_active);
+  if (params?.page) query.set("page", String(params.page));
+  if (params?.page_size) query.set("page_size", String(params.page_size));
   const suffix = query.toString() ? `?${query}` : "";
   const response = await authenticatedFetch(`/admin/shortlinks/${suffix}`);
   await throwIfNotOk(response, "Failed to load short links");
-  return response.json();
+  return asPaginated(await response.json());
 }
 
 export async function adminCreateShortLink(
@@ -475,13 +568,17 @@ export async function adminDeleteShortLink(id: number): Promise<void> {
 
 export async function adminListClicks(params?: {
   search?: string;
-}): Promise<AdminClick[]> {
+  page?: number;
+  page_size?: number;
+}): Promise<Paginated<AdminClick>> {
   const query = new URLSearchParams();
   if (params?.search) query.set("search", params.search);
+  if (params?.page) query.set("page", String(params.page));
+  if (params?.page_size) query.set("page_size", String(params.page_size));
   const suffix = query.toString() ? `?${query}` : "";
   const response = await authenticatedFetch(`/admin/clicks/${suffix}`);
   await throwIfNotOk(response, "Failed to load clicks");
-  return response.json();
+  return asPaginated(await response.json());
 }
 
 export async function adminDeleteClick(id: number): Promise<void> {
