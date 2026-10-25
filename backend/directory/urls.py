@@ -16,6 +16,7 @@ from .views import (
     AnalyticsDashboardView,
     CategoryListView,
     ShortLinkCreateView,
+    WebsiteDetailView,
     WebsiteListView,
     short_link_redirect,
     website_redirect,
@@ -25,6 +26,11 @@ from .views import (
 urlpatterns = [
     path("categories/", CategoryListView.as_view(), name="category-list"),
     path("websites/", WebsiteListView.as_view(), name="website-list"),
+    path(
+        "websites/<slug:slug>/",
+        WebsiteDetailView.as_view(),
+        name="website-detail",
+    ),
     path("go/<slug:slug>/", website_redirect, name="website-redirect"),
     path(
         "analytics/",
