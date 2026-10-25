@@ -1,18 +1,17 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 
-import {
-  ApiError,
-  getSearchResults,
-  getWebsiteRedirectUrl,
-} from "@/lib/api";
+import PaginationNav from "@/components/directory/PaginationNav";
+import WebsiteCard from "@/components/directory/WebsiteCard";
 import SearchBar from "@/components/home/SearchBar";
 import SiteShell from "@/components/layout/SiteShell";
-import type { Website } from "@/lib/types";
+import { ApiError, getSearchResults } from "@/lib/api";
+import type { Paginated, Website } from "@/lib/types";
 
 type SearchPageProps = {
   searchParams: Promise<{
     q?: string;
+    page?: string;
   }>;
 };
 
@@ -39,13 +38,19 @@ export default async function SearchPage({
 }: SearchPageProps) {
   const params = await searchParams;
   const query = params.q?.trim() ?? "";
+  const page = Math.max(1, Number(params.page) || 1);
 
-  let websites: Website[] = [];
+  let results: Paginated<Website> = {
+    count: 0,
+    next: null,
+    previous: null,
+    results: [],
+  };
   let searchError = "";
 
   if (query) {
     try {
-      websites = await getSearchResults(query);
+      results = await getSearchResults(query, page);
     } catch (error) {
       searchError =
         error instanceof ApiError
@@ -77,8 +82,8 @@ export default async function SearchPage({
 
           {query && !searchError && (
             <p className="mt-4 text-[var(--muted)]">
-              {websites.length}{" "}
-              {websites.length === 1 ? "website" : "websites"} found.
+              {results.count}{" "}
+              {results.count === 1 ? "website" : "websites"} found.
             </p>
           )}
         </div>
@@ -97,54 +102,38 @@ export default async function SearchPage({
           <p className="mt-10 text-[var(--muted)]">
             Enter a search term to discover useful websites.
           </p>
-        ) : websites.length === 0 ? (
+        ) : results.results.length === 0 ? (
           <div className="mt-10 rounded-xl border border-[var(--border)] bg-[var(--white)] p-8 text-center">
             <h2 className="text-xl font-semibold text-[var(--foreground)]">
               No results found
             </h2>
 
             <p className="mt-2 text-[var(--muted)]">
-              Try a different search term.
+              Try a different search term, or{" "}
+              <Link
+                href="/#categories"
+                className="font-semibold text-[var(--primary)]"
+              >
+                browse categories
+              </Link>
+              .
             </p>
           </div>
         ) : (
-          <div className="mt-10 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {websites.map((website) => (
-              <a
-                key={website.id}
-                href={getWebsiteRedirectUrl(website.slug)}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="group flex flex-col rounded-xl border border-[var(--border)] bg-[var(--white)] p-6 transition hover:-translate-y-1 hover:border-blue-200 hover:shadow-md"
-              >
-                <div className="flex items-start justify-between">
-                  <span
-                    className="flex h-12 w-12 items-center justify-center rounded-xl bg-slate-50 text-2xl"
-                    aria-hidden="true"
-                  >
-                    {website.category.icon || "🔗"}
-                  </span>
-
-                  <span className="rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold text-[var(--primary)]">
-                    {website.category.name}
-                  </span>
-                </div>
-
-                <h2 className="mt-5 text-lg font-semibold text-[var(--foreground)]">
-                  {website.name}
-                </h2>
-
-                <p className="mt-2 flex-1 text-sm leading-6 text-[var(--muted)]">
-                  {website.description}
-                </p>
-
-                <span className="mt-6 inline-flex items-center font-semibold text-[var(--primary)] hover:text-[var(--primary-dark)]">
-                  Visit Website
-                  <span className="ml-2">→</span>
-                </span>
-              </a>
-            ))}
-          </div>
+          <>
+            <div className="mt-10 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+              {results.results.map((website) => (
+                <WebsiteCard key={website.id} website={website} />
+              ))}
+            </div>
+            <PaginationNav
+              page={page}
+              count={results.count}
+              hrefForPage={(nextPage) =>
+                `/search?q=${encodeURIComponent(query)}&page=${nextPage}`
+              }
+            />
+          </>
         )}
       </main>
     </SiteShell>
