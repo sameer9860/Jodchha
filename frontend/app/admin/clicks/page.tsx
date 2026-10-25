@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
+import AdminPagination from "@/components/admin/AdminPagination";
 import AdminShell from "@/components/admin/AdminShell";
 import {
   ApiError,
@@ -11,14 +12,18 @@ import {
 } from "@/lib/api";
 import type { AdminClick } from "@/lib/types";
 
+const PAGE_SIZE = 20;
+
 export default function AdminClicksPage() {
   const router = useRouter();
   const [items, setItems] = useState<AdminClick[]>([]);
+  const [page, setPage] = useState(1);
+  const [count, setCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [search, setSearch] = useState("");
 
-  async function loadItems(nextSearch = search) {
+  async function loadItems(nextSearch = search, nextPage = page) {
     const accessToken = sessionStorage.getItem("jodchha_access_token");
     if (!accessToken) {
       router.replace("/admin/login");
@@ -31,8 +36,10 @@ export default function AdminClicksPage() {
     try {
       const data = await adminListClicks({
         search: nextSearch || undefined,
+        page: nextPage,
       });
-      setItems(data);
+      setItems(data.results);
+      setCount(data.count);
     } catch (err) {
       setError(
         err instanceof ApiError ? err.message : "Unable to load clicks.",
@@ -46,9 +53,9 @@ export default function AdminClicksPage() {
   }
 
   useEffect(() => {
-    void loadItems();
+    void loadItems(search, page);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [router]);
+  }, [router, page]);
 
   async function handleDelete(item: AdminClick) {
     if (!window.confirm(`Delete click #${item.id}?`)) {
@@ -84,7 +91,8 @@ export default function AdminClicksPage() {
           className="flex flex-col gap-3 sm:flex-row"
           onSubmit={(event) => {
             event.preventDefault();
-            void loadItems(search);
+            setPage(1);
+            void loadItems(search, 1);
           }}
         >
           <input
@@ -133,7 +141,7 @@ export default function AdminClicksPage() {
                   {items.map((item, index) => (
                     <tr key={item.id} className="border-b border-slate-100 last:border-0">
                       <td className="px-4 py-4 tabular-nums text-slate-500">
-                        {index + 1}
+                        {(page - 1) * PAGE_SIZE + index + 1}
                       </td>
                       <td className="px-4 py-4 text-slate-700">
                         {item.website ? "Website" : "Short Link"}
@@ -164,13 +172,19 @@ export default function AdminClicksPage() {
                   ))}
                 </tbody>
               </table>
+              <AdminPagination
+                page={page}
+                count={count}
+                pageSize={PAGE_SIZE}
+                onPageChange={setPage}
+              />
             </div>
           )}
         </div>
 
         <p className="text-xs text-slate-500">
-          Showing the latest 200 click records. Clicks are read-only except for
-          delete.
+          Clicks are listed newest first. Delete a record only if it was created
+          in error.
         </p>
       </div>
     </AdminShell>
