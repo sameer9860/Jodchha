@@ -9,6 +9,7 @@ from rest_framework.permissions import IsAdminUser
 from rest_framework.response import Response
 
 from .models import Category, Click, ShortLink, Website
+from .pagination import PublicPagination
 from .serializers import (
     CategorySerializer,
     ShortLinkSerializer,
@@ -23,6 +24,7 @@ class CategoryListView(generics.ListAPIView):
 
 class WebsiteListView(generics.ListAPIView):
     serializer_class = WebsiteSerializer
+    pagination_class = PublicPagination
 
     def get_queryset(self):
         queryset = Website.objects.filter(is_active=True).select_related("category")
@@ -45,6 +47,12 @@ class WebsiteListView(generics.ListAPIView):
             )
 
         return queryset
+
+
+class WebsiteDetailView(generics.RetrieveAPIView):
+    serializer_class = WebsiteSerializer
+    lookup_field = "slug"
+    queryset = Website.objects.filter(is_active=True).select_related("category")
 
 
 def website_redirect(request, slug):
