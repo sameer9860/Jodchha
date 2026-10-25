@@ -3,6 +3,7 @@
 import { FormEvent, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
+import AdminPagination from "@/components/admin/AdminPagination";
 import AdminShell from "@/components/admin/AdminShell";
 import {
   ApiError,
@@ -14,6 +15,8 @@ import {
 } from "@/lib/api";
 import type { AdminShortLink } from "@/lib/types";
 
+const PAGE_SIZE = 20;
+
 const emptyForm = {
   code: "",
   destination_url: "",
@@ -24,6 +27,8 @@ const emptyForm = {
 export default function AdminShortLinksPage() {
   const router = useRouter();
   const [items, setItems] = useState<AdminShortLink[]>([]);
+  const [page, setPage] = useState(1);
+  const [count, setCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -32,7 +37,7 @@ export default function AdminShortLinksPage() {
   const [editing, setEditing] = useState<AdminShortLink | null>(null);
   const [form, setForm] = useState(emptyForm);
 
-  async function loadItems(nextSearch = search) {
+  async function loadItems(nextSearch = search, nextPage = page) {
     const accessToken = sessionStorage.getItem("jodchha_access_token");
     if (!accessToken) {
       router.replace("/admin/login");
@@ -45,8 +50,10 @@ export default function AdminShortLinksPage() {
     try {
       const data = await adminListShortLinks({
         search: nextSearch || undefined,
+        page: nextPage,
       });
-      setItems(data);
+      setItems(data.results);
+      setCount(data.count);
     } catch (err) {
       setError(
         err instanceof ApiError ? err.message : "Unable to load short links.",
@@ -60,9 +67,9 @@ export default function AdminShortLinksPage() {
   }
 
   useEffect(() => {
-    void loadItems();
+    void loadItems(search, page);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [router]);
+  }, [router, page]);
 
   function openCreate() {
     setEditing(null);
@@ -162,7 +169,8 @@ export default function AdminShortLinksPage() {
           className="flex flex-col gap-3 sm:flex-row"
           onSubmit={(event) => {
             event.preventDefault();
-            void loadItems(search);
+            setPage(1);
+            void loadItems(search, 1);
           }}
         >
           <input
@@ -212,7 +220,7 @@ export default function AdminShortLinksPage() {
                   {items.map((item, index) => (
                     <tr key={item.id} className="border-b border-slate-100 last:border-0">
                       <td className="px-4 py-4 tabular-nums text-slate-500">
-                        {index + 1}
+                        {(page - 1) * PAGE_SIZE + index + 1}
                       </td>
                       <td className="px-4 py-4">
                         <a
@@ -272,6 +280,12 @@ export default function AdminShortLinksPage() {
                   ))}
                 </tbody>
               </table>
+              <AdminPagination
+                page={page}
+                count={count}
+                pageSize={PAGE_SIZE}
+                onPageChange={setPage}
+              />
             </div>
           )}
         </div>
