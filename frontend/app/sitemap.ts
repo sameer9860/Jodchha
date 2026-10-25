@@ -1,16 +1,21 @@
 import type { MetadataRoute } from "next";
 
-import { getCategories } from "@/lib/api";
+import { getCategories, getSitemapWebsites } from "@/lib/api";
 
 const siteUrl = "https://jodchha.com.np";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   let categories: Awaited<ReturnType<typeof getCategories>> = [];
+  let websites: Awaited<ReturnType<typeof getSitemapWebsites>> = [];
 
   try {
-    categories = await getCategories();
+    [categories, websites] = await Promise.all([
+      getCategories(),
+      getSitemapWebsites(),
+    ]);
   } catch {
     categories = [];
+    websites = [];
   }
 
   const staticPages: MetadataRoute.Sitemap = [
@@ -95,5 +100,14 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.7,
   }));
 
-  return [...staticPages, ...categoryPages];
+  const websitePages: MetadataRoute.Sitemap = websites.map((website) => ({
+    url: `${siteUrl}/websites/${website.slug}`,
+    lastModified: website.updated_at
+      ? new Date(website.updated_at)
+      : new Date(),
+    changeFrequency: "weekly",
+    priority: 0.6,
+  }));
+
+  return [...staticPages, ...categoryPages, ...websitePages];
 }
