@@ -5,8 +5,9 @@ from django.db.models.functions import TruncDate
 from django.shortcuts import get_object_or_404, redirect
 from django.utils import timezone
 from rest_framework import generics, status
-from rest_framework.permissions import IsAdminUser
+from rest_framework.permissions import AllowAny, IsAdminUser
 from rest_framework.response import Response
+from rest_framework.views import APIView
 
 from .models import Category, Click, ShortLink, Website
 from .pagination import PublicPagination
@@ -15,6 +16,7 @@ from .serializers import (
     ShortLinkSerializer,
     WebsiteSerializer,
 )
+from .throttles import RedirectThrottle, ShortLinkCreateThrottle
 from .utils import generate_short_code
 
 class CategoryListView(generics.ListAPIView):
@@ -55,25 +57,33 @@ class WebsiteDetailView(generics.RetrieveAPIView):
     queryset = Website.objects.filter(is_active=True).select_related("category")
 
 
-def website_redirect(request, slug):
-    website = get_object_or_404(
-        Website,
-        slug=slug,
-        is_active=True,
-    )
+class WebsiteRedirectView(APIView):
+    authentication_classes = ()
+    permission_classes = (AllowAny,)
+    throttle_classes = (RedirectThrottle,)
 
-    Website.objects.filter(pk=website.pk).update(click_count=F("click_count") + 1)
+    def get(self, request, slug):
+        website = get_object_or_404(
+            Website,
+            slug=slug,
+            is_active=True,
+        )
 
-    Click.objects.create(
-        website=website,
-        referrer=request.headers.get("Referer", ""),
-        user_agent=request.headers.get("User-Agent", ""),
-    )
+        Website.objects.filter(pk=website.pk).update(click_count=F("click_count") + 1)
 
-    return redirect(website.url)
+        Click.objects.create(
+            website=website,
+            referrer=request.headers.get("Referer", ""),
+            user_agent=request.headers.get("User-Agent", ""),
+        )
+
+        return redirect(website.url)
 
 
 class ShortLinkCreateView(generics.CreateAPIView):
+    authentication_classes = ()
+    permission_classes = (AllowAny,)
+    throttle_classes = (ShortLinkCreateThrottle,)
     serializer_class = ShortLinkSerializer
 
     def create(self, request, *args, **kwargs):
@@ -94,25 +104,32 @@ class ShortLinkCreateView(generics.CreateAPIView):
         )
 
 
-def short_link_redirect(request, code):
-    short_link = get_object_or_404(
-        ShortLink,
-        code=code,
-        is_active=True,
-    )
+class ShortLinkRedirectView(APIView):
+    authentication_classes = ()
+    permission_classes = (AllowAny,)
+    throttle_classes = (RedirectThrottle,)
 
-    if short_link.expires_at and short_link.expires_at <= timezone.now():
-        return redirect("/")
+    def get(self, request, code):
+        short_link = get_object_or_404(
+            ShortLink,
+            code=code,
+            is_active=True,
+        )
 
-    ShortLink.objects.filter(pk=short_link.pk).update(click_count=F("click_count") + 1)
+        if short_link.expires_at and short_link.expires_at <= timezone.now():
+            return redirect("/")
 
-    Click.objects.create(
-        short_link=short_link,
-        referrer=request.headers.get("Referer", ""),
-        user_agent=request.headers.get("User-Agent", ""),
-    )
+        ShortLink.objects.filter(pk=short_link.pk).update(
+            click_count=F("click_count") + 1
+        )
 
-    return redirect(short_link.destination_url)
+        Click.objects.create(
+            short_link=short_link,
+            referrer=request.headers.get("Referer", ""),
+            user_agent=request.headers.get("User-Agent", ""),
+        )
+
+        return redirect(short_link.destination_url)
 
 
 
