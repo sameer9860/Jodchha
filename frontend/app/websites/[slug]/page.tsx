@@ -193,7 +193,7 @@ export default async function WebsitePage({ params }: WebsitePageProps) {
             {website.description}
           </p>
 
-          {typeof website.click_count === "number" && (
+          {typeof website.click_count === "number" && website.click_count >= 10 && (
             <p className="mt-6 text-sm text-[var(--muted)]">
               {website.click_count.toLocaleString()} visits tracked on Jodchha
             </p>
